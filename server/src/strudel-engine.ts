@@ -21,6 +21,30 @@ const synthSounds: Set<string> = new Set();      // Synth waveforms (sine, saw, 
 const sampleBanks: Set<string> = new Set();      // Bank names for .bank() (RolandTR808, etc.)
 const loadedSamples: Set<string> = new Set();    // All sample/sound names for s()/sound()
 
+// REPL control functions - these are bound to the engine instance after initialization
+// We use a mutable reference so evalScope can access them before the engine exists
+const replControls = {
+  hush: () => { console.warn('[strudel] hush() called before engine initialized'); },
+  setcps: (_cps: number) => { console.warn('[strudel] setcps() called before engine initialized'); },
+};
+
+/**
+ * Stop all sounds immediately (panic button)
+ * This is exposed to user code via evalScope
+ */
+function hush(): void {
+  replControls.hush();
+}
+
+/**
+ * Set the tempo in cycles per second
+ * This is exposed to user code via evalScope
+ * @param cps - Cycles per second (e.g., 0.5 = 1 cycle every 2 seconds)
+ */
+function setcps(cps: number): void {
+  replControls.setcps(cps);
+}
+
 /**
  * Wrapper around superdough's samples() that tracks loaded sample names.
  * This is exposed to user pattern code so they can load custom samples.
@@ -114,12 +138,13 @@ async function trackSampleNames(
 
 // Initialize the Strudel scope with all the goodies
 // Include our samples() wrapper so users can load custom samples in their patterns
+// Also expose hush() and setcps() for REPL-level control from user code
 await evalScope(
   core,
   mini,
   tonal,
   import('@strudel/core'),
-  { samples }, // Expose our samples wrapper to user code
+  { samples, hush, setcps }, // Expose our wrappers to user code
 );
 
 // Register stub visualizer methods on Pattern.prototype
@@ -336,6 +361,11 @@ export class StrudelEngine {
 
   constructor() {
     this.initRepl();
+    
+    // Bind REPL control functions so they work from user code
+    replControls.hush = () => this.hush();
+    replControls.setcps = (cps: number) => this.setCps(cps);
+    
     console.log('[strudel-engine] Engine initialized');
     
     // Log audio context state

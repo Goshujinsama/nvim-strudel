@@ -559,6 +559,752 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
       parameters: [{ label: 'bus', documentation: 'Effect bus number (0-11)' }],
     }],
   },
+  // REPL control functions
+  {
+    name: 'hush',
+    detail: 'Stop all sounds',
+    documentation: 'Emergency stop - silences all sounds immediately (panic button)',
+    signatures: [{
+      label: 'hush()',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'setcps',
+    detail: 'Set tempo',
+    documentation: 'Set the tempo in cycles per second. 1 = 1 cycle per second, 0.5 = 1 cycle every 2 seconds',
+    signatures: [{
+      label: 'setcps(cps)',
+      parameters: [{ label: 'cps', documentation: 'Cycles per second (e.g., 0.5 for half speed, 2 for double speed)' }],
+    }],
+  },
+  // Time modifiers
+  {
+    name: 'early',
+    detail: 'Shift earlier',
+    documentation: 'Shift pattern earlier in time by the given amount',
+    signatures: [{
+      label: 'early(amount)',
+      parameters: [{ label: 'amount', documentation: 'Amount to shift earlier (in cycles)' }],
+    }],
+  },
+  {
+    name: 'late',
+    detail: 'Shift later',
+    documentation: 'Shift pattern later in time by the given amount',
+    signatures: [{
+      label: 'late(amount)',
+      parameters: [{ label: 'amount', documentation: 'Amount to shift later (in cycles)' }],
+    }],
+  },
+  {
+    name: 'ply',
+    detail: 'Multiply events',
+    documentation: 'Multiply each event in the pattern, subdividing it',
+    signatures: [{
+      label: 'ply(factor)',
+      parameters: [{ label: 'factor', documentation: 'Number of times to subdivide each event' }],
+    }],
+  },
+  {
+    name: 'segment',
+    detail: 'Segment pattern',
+    documentation: 'Sample the pattern at a fixed number of segments per cycle',
+    signatures: [{
+      label: 'segment(n)',
+      parameters: [{ label: 'n', documentation: 'Number of segments per cycle' }],
+    }],
+  },
+  {
+    name: 'iter',
+    detail: 'Iterate pattern',
+    documentation: 'Shift the pattern by 1/n each cycle, cycling through variations',
+    signatures: [{
+      label: 'iter(n)',
+      parameters: [{ label: 'n', documentation: 'Number of iterations before repeating' }],
+    }],
+  },
+  {
+    name: 'iterBack',
+    detail: 'Iterate backwards',
+    documentation: 'Like iter but shifts in the opposite direction',
+    signatures: [{
+      label: 'iterBack(n)',
+      parameters: [{ label: 'n', documentation: 'Number of iterations before repeating' }],
+    }],
+  },
+  {
+    name: 'palindrome',
+    detail: 'Palindrome',
+    documentation: 'Play pattern forwards then backwards',
+    signatures: [{
+      label: 'palindrome()',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'compress',
+    detail: 'Compress time',
+    documentation: 'Compress pattern into a portion of the cycle',
+    signatures: [{
+      label: 'compress(start, end)',
+      parameters: [
+        { label: 'start', documentation: 'Start position (0-1)' },
+        { label: 'end', documentation: 'End position (0-1)' },
+      ],
+    }],
+  },
+  {
+    name: 'zoom',
+    detail: 'Zoom into pattern',
+    documentation: 'Zoom into a portion of the pattern',
+    signatures: [{
+      label: 'zoom(start, end)',
+      parameters: [
+        { label: 'start', documentation: 'Start position (0-1)' },
+        { label: 'end', documentation: 'End position (0-1)' },
+      ],
+    }],
+  },
+  {
+    name: 'linger',
+    detail: 'Linger on portion',
+    documentation: 'Only play the first portion of the pattern, looping it',
+    signatures: [{
+      label: 'linger(fraction)',
+      parameters: [{ label: 'fraction', documentation: 'Fraction of pattern to loop (e.g., 0.25 = first quarter)' }],
+    }],
+  },
+  {
+    name: 'fastGap',
+    detail: 'Fast with gap',
+    documentation: 'Speed up pattern but leave a gap, maintaining cycle length',
+    signatures: [{
+      label: 'fastGap(factor)',
+      parameters: [{ label: 'factor', documentation: 'Speed factor' }],
+    }],
+  },
+  {
+    name: 'inside',
+    detail: 'Apply inside',
+    documentation: 'Apply function inside a time span (speed up, apply, slow down)',
+    signatures: [{
+      label: 'inside(factor, function)',
+      parameters: [
+        { label: 'factor', documentation: 'Time compression factor' },
+        { label: 'function', documentation: 'Function to apply' },
+      ],
+    }],
+  },
+  {
+    name: 'outside',
+    detail: 'Apply outside',
+    documentation: 'Apply function outside a time span (slow down, apply, speed up)',
+    signatures: [{
+      label: 'outside(factor, function)',
+      parameters: [
+        { label: 'factor', documentation: 'Time expansion factor' },
+        { label: 'function', documentation: 'Function to apply' },
+      ],
+    }],
+  },
+  {
+    name: 'cpm',
+    detail: 'Cycles per minute',
+    documentation: 'Set pattern speed in cycles per minute',
+    signatures: [{
+      label: 'cpm(n)',
+      parameters: [{ label: 'n', documentation: 'Cycles per minute' }],
+    }],
+  },
+  {
+    name: 'swing',
+    detail: 'Swing feel',
+    documentation: 'Apply swing timing to pattern',
+    signatures: [{
+      label: 'swing(amount)',
+      parameters: [{ label: 'amount', documentation: 'Swing amount (0-1)' }],
+    }],
+  },
+  {
+    name: 'swingBy',
+    detail: 'Swing by division',
+    documentation: 'Apply swing at specific subdivision',
+    signatures: [{
+      label: 'swingBy(amount, division)',
+      parameters: [
+        { label: 'amount', documentation: 'Swing amount' },
+        { label: 'division', documentation: 'Subdivision to swing' },
+      ],
+    }],
+  },
+  {
+    name: 'hurry',
+    detail: 'Hurry up',
+    documentation: 'Speed up pattern and also speed up sample playback',
+    signatures: [{
+      label: 'hurry(factor)',
+      parameters: [{ label: 'factor', documentation: 'Speed factor (affects both pattern and samples)' }],
+    }],
+  },
+  // Signals (continuous patterns)
+  {
+    name: 'saw',
+    detail: 'Sawtooth signal',
+    documentation: 'Continuous sawtooth wave pattern (0 to 1 over each cycle)',
+    signatures: [{
+      label: 'saw',
+      documentation: 'Use with .range() to set output range: saw.range(0, 100)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'sine',
+    detail: 'Sine signal',
+    documentation: 'Continuous sine wave pattern (oscillates 0 to 1)',
+    signatures: [{
+      label: 'sine',
+      documentation: 'Use with .range() to set output range: sine.range(200, 2000)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'cosine',
+    detail: 'Cosine signal',
+    documentation: 'Continuous cosine wave pattern (like sine but phase-shifted)',
+    signatures: [{
+      label: 'cosine',
+      documentation: 'Use with .range() to set output range: cosine.range(0, 1)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'tri',
+    detail: 'Triangle signal',
+    documentation: 'Continuous triangle wave pattern',
+    signatures: [{
+      label: 'tri',
+      documentation: 'Use with .range() to set output range: tri.range(0, 1)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'square',
+    detail: 'Square signal',
+    documentation: 'Continuous square wave pattern (alternates between 0 and 1)',
+    signatures: [{
+      label: 'square',
+      documentation: 'Use with .range() to set output range: square.range(0, 1)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'rand',
+    detail: 'Random signal',
+    documentation: 'Continuous random pattern (new random value each cycle)',
+    signatures: [{
+      label: 'rand',
+      documentation: 'Use with .range() to set output range: rand.range(0, 100)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'perlin',
+    detail: 'Perlin noise',
+    documentation: 'Smooth continuous random pattern using Perlin noise',
+    signatures: [{
+      label: 'perlin',
+      documentation: 'Use with .range() to set output range: perlin.range(0, 1)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'irand',
+    detail: 'Integer random',
+    documentation: 'Random integer pattern',
+    signatures: [{
+      label: 'irand(max)',
+      parameters: [{ label: 'max', documentation: 'Maximum value (exclusive)' }],
+    }],
+  },
+  {
+    name: 'brand',
+    detail: 'Binary random',
+    documentation: 'Random binary pattern (0 or 1)',
+    signatures: [{
+      label: 'brand',
+      parameters: [],
+    }],
+  },
+  // Random modifiers
+  {
+    name: 'choose',
+    detail: 'Choose random',
+    documentation: 'Randomly choose from a list of values each cycle',
+    signatures: [{
+      label: 'choose(values...)',
+      parameters: [{ label: 'values', documentation: 'Values to choose from' }],
+    }, {
+      label: 'choose([values])',
+      parameters: [{ label: 'values', documentation: 'Array of values to choose from' }],
+    }],
+  },
+  {
+    name: 'wchoose',
+    detail: 'Weighted choose',
+    documentation: 'Randomly choose with weights',
+    signatures: [{
+      label: 'wchoose([[value, weight], ...])',
+      parameters: [{ label: 'pairs', documentation: 'Array of [value, weight] pairs' }],
+    }],
+  },
+  {
+    name: 'chooseCycles',
+    detail: 'Choose for N cycles',
+    documentation: 'Choose a random value and keep it for N cycles',
+    signatures: [{
+      label: 'chooseCycles(n, values...)',
+      parameters: [
+        { label: 'n', documentation: 'Number of cycles to keep the choice' },
+        { label: 'values', documentation: 'Values to choose from' },
+      ],
+    }],
+  },
+  {
+    name: 'degradeBy',
+    detail: 'Degrade by amount',
+    documentation: 'Randomly remove events with given probability',
+    signatures: [{
+      label: 'degradeBy(amount)',
+      parameters: [{ label: 'amount', documentation: 'Probability of removing each event (0-1)' }],
+    }],
+  },
+  {
+    name: 'degrade',
+    detail: 'Degrade 50%',
+    documentation: 'Randomly remove 50% of events',
+    signatures: [{
+      label: 'degrade()',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'undegradeBy',
+    detail: 'Undegrade by amount',
+    documentation: 'Randomly keep events with given probability (opposite of degradeBy)',
+    signatures: [{
+      label: 'undegradeBy(amount)',
+      parameters: [{ label: 'amount', documentation: 'Probability of keeping each event (0-1)' }],
+    }],
+  },
+  {
+    name: 'sometimesBy',
+    detail: 'Sometimes by amount',
+    documentation: 'Apply function with given probability',
+    signatures: [{
+      label: 'sometimesBy(amount, function)',
+      parameters: [
+        { label: 'amount', documentation: 'Probability (0-1)' },
+        { label: 'function', documentation: 'Function to sometimes apply' },
+      ],
+    }],
+  },
+  {
+    name: 'someCycles',
+    detail: 'Some cycles',
+    documentation: 'Apply function on some cycles (50% probability per cycle)',
+    signatures: [{
+      label: 'someCycles(function)',
+      parameters: [{ label: 'function', documentation: 'Function to apply on some cycles' }],
+    }],
+  },
+  {
+    name: 'someCyclesBy',
+    detail: 'Some cycles by amount',
+    documentation: 'Apply function on some cycles with given probability',
+    signatures: [{
+      label: 'someCyclesBy(amount, function)',
+      parameters: [
+        { label: 'amount', documentation: 'Probability per cycle (0-1)' },
+        { label: 'function', documentation: 'Function to apply' },
+      ],
+    }],
+  },
+  {
+    name: 'never',
+    detail: 'Never apply',
+    documentation: 'Never apply the function (0% probability)',
+    signatures: [{
+      label: 'never(function)',
+      parameters: [{ label: 'function', documentation: 'Function to never apply' }],
+    }],
+  },
+  {
+    name: 'always',
+    detail: 'Always apply',
+    documentation: 'Always apply the function (100% probability)',
+    signatures: [{
+      label: 'always(function)',
+      parameters: [{ label: 'function', documentation: 'Function to always apply' }],
+    }],
+  },
+  // Pattern factories
+  {
+    name: 'seq',
+    detail: 'Sequence',
+    documentation: 'Alias for cat - play patterns in sequence',
+    signatures: [{
+      label: 'seq(pattern1, pattern2, ...)',
+      parameters: [{ label: 'patterns', documentation: 'Patterns to play in sequence' }],
+    }],
+  },
+  {
+    name: 'silence',
+    detail: 'Silence',
+    documentation: 'A silent pattern - produces no events',
+    signatures: [{
+      label: 'silence',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'run',
+    detail: 'Run sequence',
+    documentation: 'Create a pattern of numbers from 0 to n-1',
+    signatures: [{
+      label: 'run(n)',
+      parameters: [{ label: 'n', documentation: 'Number of steps (0 to n-1)' }],
+    }],
+  },
+  {
+    name: 'arrange',
+    detail: 'Arrange patterns',
+    documentation: 'Arrange patterns over multiple cycles',
+    signatures: [{
+      label: 'arrange([cycles, pattern], ...)',
+      parameters: [{ label: 'pairs', documentation: 'Array of [numCycles, pattern] pairs' }],
+    }],
+  },
+  {
+    name: 'polymeter',
+    detail: 'Polymeter',
+    documentation: 'Play patterns with different lengths simultaneously',
+    signatures: [{
+      label: 'polymeter(pattern1, pattern2, ...)',
+      parameters: [{ label: 'patterns', documentation: 'Patterns of different lengths' }],
+    }],
+  },
+  {
+    name: 'polymeterSteps',
+    detail: 'Polymeter with steps',
+    documentation: 'Polymeter with specified step counts',
+    signatures: [{
+      label: 'polymeterSteps(steps, pattern1, pattern2, ...)',
+      parameters: [
+        { label: 'steps', documentation: 'Number of steps per cycle' },
+        { label: 'patterns', documentation: 'Patterns to polymetrically combine' },
+      ],
+    }],
+  },
+  {
+    name: 'binary',
+    detail: 'Binary pattern',
+    documentation: 'Create pattern from binary number',
+    signatures: [{
+      label: 'binary(n)',
+      parameters: [{ label: 'n', documentation: 'Number to convert to binary pattern' }],
+    }],
+  },
+  {
+    name: 'binaryN',
+    detail: 'Binary with length',
+    documentation: 'Create pattern from binary number with specified length',
+    signatures: [{
+      label: 'binaryN(bits, n)',
+      parameters: [
+        { label: 'bits', documentation: 'Number of bits (pattern length)' },
+        { label: 'n', documentation: 'Number to convert' },
+      ],
+    }],
+  },
+  // Tonal functions
+  {
+    name: 'transpose',
+    detail: 'Transpose',
+    documentation: 'Transpose notes by semitones',
+    signatures: [{
+      label: 'transpose(semitones)',
+      parameters: [{ label: 'semitones', documentation: 'Number of semitones to transpose' }],
+    }],
+  },
+  {
+    name: 'scaleTranspose',
+    detail: 'Scale transpose',
+    documentation: 'Transpose within the current scale',
+    signatures: [{
+      label: 'scaleTranspose(steps)',
+      parameters: [{ label: 'steps', documentation: 'Number of scale steps to transpose' }],
+    }],
+  },
+  {
+    name: 'rootNotes',
+    detail: 'Root notes',
+    documentation: 'Get root notes of chords',
+    signatures: [{
+      label: 'rootNotes(pattern)',
+      parameters: [{ label: 'pattern', documentation: 'Pattern of chord names' }],
+    }],
+  },
+  // More effects
+  {
+    name: 'distort',
+    detail: 'Distortion',
+    documentation: 'Apply distortion effect',
+    signatures: [{
+      label: 'distort(amount)',
+      parameters: [{ label: 'amount', documentation: 'Distortion amount (0-1)' }],
+    }],
+  },
+  {
+    name: 'shape',
+    detail: 'Wave shaping',
+    documentation: 'Apply wave shaping distortion',
+    signatures: [{
+      label: 'shape(amount)',
+      parameters: [{ label: 'amount', documentation: 'Shaping amount (0-1)' }],
+    }],
+  },
+  {
+    name: 'tremolo',
+    detail: 'Tremolo',
+    documentation: 'Apply tremolo (amplitude modulation) effect',
+    signatures: [{
+      label: 'tremolo(depth, rate)',
+      parameters: [
+        { label: 'depth', documentation: 'Tremolo depth (0-1)' },
+        { label: 'rate', documentation: 'Tremolo rate in Hz' },
+      ],
+    }],
+  },
+  {
+    name: 'phaser',
+    detail: 'Phaser',
+    documentation: 'Apply phaser effect',
+    signatures: [{
+      label: 'phaser(depth, rate)',
+      parameters: [
+        { label: 'depth', documentation: 'Phaser depth (0-1)' },
+        { label: 'rate', documentation: 'Phaser rate' },
+      ],
+    }],
+  },
+  {
+    name: 'squiz',
+    detail: 'Squiz',
+    documentation: 'Apply squiz effect (pitch-based distortion)',
+    signatures: [{
+      label: 'squiz(amount)',
+      parameters: [{ label: 'amount', documentation: 'Squiz amount' }],
+    }],
+  },
+  {
+    name: 'waveloss',
+    detail: 'Wave loss',
+    documentation: 'Drop samples for lo-fi effect',
+    signatures: [{
+      label: 'waveloss(amount)',
+      parameters: [{ label: 'amount', documentation: 'Amount of samples to drop' }],
+    }],
+  },
+  {
+    name: 'delaytime',
+    detail: 'Delay time',
+    documentation: 'Set delay time',
+    signatures: [{
+      label: 'delaytime(time)',
+      parameters: [{ label: 'time', documentation: 'Delay time in cycles' }],
+    }],
+  },
+  {
+    name: 'delayfeedback',
+    detail: 'Delay feedback',
+    documentation: 'Set delay feedback amount',
+    signatures: [{
+      label: 'delayfeedback(amount)',
+      parameters: [{ label: 'amount', documentation: 'Feedback amount (0-1)' }],
+    }],
+  },
+  {
+    name: 'size',
+    detail: 'Reverb size',
+    documentation: 'Set reverb room size',
+    signatures: [{
+      label: 'size(amount)',
+      parameters: [{ label: 'amount', documentation: 'Room size (0-1)' }],
+    }],
+  },
+  {
+    name: 'velocity',
+    detail: 'Velocity',
+    documentation: 'Set note velocity (for MIDI/instruments)',
+    signatures: [{
+      label: 'velocity(amount)',
+      parameters: [{ label: 'amount', documentation: 'Velocity (0-1)' }],
+    }],
+  },
+  {
+    name: 'amp',
+    detail: 'Amplitude',
+    documentation: 'Set amplitude (alias for gain)',
+    signatures: [{
+      label: 'amp(amount)',
+      parameters: [{ label: 'amount', documentation: 'Amplitude level' }],
+    }],
+  },
+  // More utility functions
+  {
+    name: 'range',
+    detail: 'Range',
+    documentation: 'Map pattern values to a range',
+    signatures: [{
+      label: 'range(min, max)',
+      parameters: [
+        { label: 'min', documentation: 'Minimum output value' },
+        { label: 'max', documentation: 'Maximum output value' },
+      ],
+    }],
+  },
+  {
+    name: 'cps',
+    detail: 'Get/set CPS',
+    documentation: 'Get or set cycles per second as a pattern',
+    signatures: [{
+      label: 'cps(value)',
+      parameters: [{ label: 'value', documentation: 'Cycles per second' }],
+    }],
+  },
+  {
+    name: 'off',
+    detail: 'Off',
+    documentation: 'Layer a time-shifted and modified copy of the pattern',
+    signatures: [{
+      label: 'off(amount, function)',
+      parameters: [
+        { label: 'amount', documentation: 'Time offset' },
+        { label: 'function', documentation: 'Function to apply to offset copy' },
+      ],
+    }],
+  },
+  {
+    name: 'layer',
+    detail: 'Layer',
+    documentation: 'Layer multiple functions over the pattern',
+    signatures: [{
+      label: 'layer(function1, function2, ...)',
+      parameters: [{ label: 'functions', documentation: 'Functions to layer' }],
+    }],
+  },
+  {
+    name: 'superimpose',
+    detail: 'Superimpose',
+    documentation: 'Play pattern with a modified copy on top',
+    signatures: [{
+      label: 'superimpose(function)',
+      parameters: [{ label: 'function', documentation: 'Function to apply to superimposed copy' }],
+    }],
+  },
+  {
+    name: 'stut',
+    detail: 'Stutter',
+    documentation: 'Stutter effect - repeat with decay',
+    signatures: [{
+      label: 'stut(times, decay, time)',
+      parameters: [
+        { label: 'times', documentation: 'Number of repeats' },
+        { label: 'decay', documentation: 'Volume decay per repeat' },
+        { label: 'time', documentation: 'Time between repeats' },
+      ],
+    }],
+  },
+  {
+    name: 'echo',
+    detail: 'Echo',
+    documentation: 'Echo effect - repeat with delay',
+    signatures: [{
+      label: 'echo(times, time, feedback)',
+      parameters: [
+        { label: 'times', documentation: 'Number of echoes' },
+        { label: 'time', documentation: 'Delay time' },
+        { label: 'feedback', documentation: 'Feedback amount' },
+      ],
+    }],
+  },
+  {
+    name: 'when',
+    detail: 'When',
+    documentation: 'Apply function when condition is true',
+    signatures: [{
+      label: 'when(condition, function)',
+      parameters: [
+        { label: 'condition', documentation: 'Boolean pattern or function' },
+        { label: 'function', documentation: 'Function to apply when true' },
+      ],
+    }],
+  },
+  {
+    name: 'while',
+    detail: 'While',
+    documentation: 'Play pattern while condition is true, otherwise silence',
+    signatures: [{
+      label: 'while(condition)',
+      parameters: [{ label: 'condition', documentation: 'Boolean pattern' }],
+    }],
+  },
+  {
+    name: 'firstOf',
+    detail: 'First of N',
+    documentation: 'Apply function only on the first of every N cycles',
+    signatures: [{
+      label: 'firstOf(n, function)',
+      parameters: [
+        { label: 'n', documentation: 'Cycle interval' },
+        { label: 'function', documentation: 'Function to apply on first cycle' },
+      ],
+    }],
+  },
+  {
+    name: 'lastOf',
+    detail: 'Last of N',
+    documentation: 'Apply function only on the last of every N cycles',
+    signatures: [{
+      label: 'lastOf(n, function)',
+      parameters: [
+        { label: 'n', documentation: 'Cycle interval' },
+        { label: 'function', documentation: 'Function to apply on last cycle' },
+      ],
+    }],
+  },
+  {
+    name: 'chunk',
+    detail: 'Chunk',
+    documentation: 'Divide pattern into chunks and apply function to one chunk per cycle',
+    signatures: [{
+      label: 'chunk(n, function)',
+      parameters: [
+        { label: 'n', documentation: 'Number of chunks' },
+        { label: 'function', documentation: 'Function to apply to current chunk' },
+      ],
+    }],
+  },
+  {
+    name: 'arp',
+    detail: 'Arpeggio',
+    documentation: 'Arpeggiate chords',
+    signatures: [{
+      label: 'arp(pattern)',
+      parameters: [{ label: 'pattern', documentation: 'Arpeggio pattern (e.g., "up", "down", "updown")' }],
+    }],
+  },
 ];
 
 // Common typos and their corrections
