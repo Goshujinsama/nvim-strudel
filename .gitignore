@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+server/dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Test coverage
+coverage/
+
+# Temporary files
+*.tmp
+*.temp

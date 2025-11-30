@@ -1,8 +1,8 @@
-# AGENTS.md - strudel.nvim
+# AGENTS.md - nvim-strudel
 
 ## Project Overview
 
-**strudel.nvim** is a Neovim plugin that brings the [Strudel](https://strudel.cc/) live coding music environment to Neovim. It provides real-time visualization of active pattern elements using highlight groups and conceal characters, mirroring the web UI's visual feedback during playback.
+**nvim-strudel** is a Neovim plugin that brings the [Strudel](https://strudel.cc/) live coding music environment to Neovim. It provides real-time visualization of active pattern elements using highlight groups and conceal characters, mirroring the web UI's visual feedback during playback.
 
 ### Goals
 - Live code music patterns directly in Neovim
@@ -16,7 +16,7 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                         Neovim                                  │
 │  ┌───────────────────────────────────────────────────────────┐  │
-│  │                    strudel.nvim (Lua)                     │  │
+│  │                    nvim-strudel (Lua)                      │  │
 │  │  - Buffer management                                      │  │
 │  │  - Highlight groups for active elements                   │  │
 │  │  - Conceal characters for visualization                   │  │
@@ -42,7 +42,7 @@
 ## Directory Structure
 
 ```
-strudel.nvim/
+nvim-strudel/
 ├── AGENTS.md                 # This file
 ├── README.md                 # User documentation
 ├── LICENSE                   # AGPL-3.0 (matching Strudel)
@@ -55,6 +55,7 @@ strudel.nvim/
 │       ├── commands.lua      # User commands registration
 │       ├── highlights.lua    # Highlight group definitions
 │       ├── visualizer.lua    # Real-time highlight/conceal updates
+│       ├── lsp.lua           # LSP client setup for mini-notation
 │       ├── picker.lua        # Picker abstraction (Snacks/Telescope)
 │       └── utils.lua         # Shared utilities
 │
@@ -67,7 +68,6 @@ strudel.nvim/
 │   └── src/
 │       ├── index.ts          # Server entry point
 │       ├── strudel-engine.ts # Strudel pattern evaluation wrapper
-│       ├── audio.ts          # Audio output management
 │       ├── websocket.ts      # WebSocket server for Neovim
 │       ├── lsp.ts            # LSP server for mini-notation
 │       ├── source-map.ts     # Track code positions to events
@@ -120,6 +120,12 @@ User commands:
 - `:StrudelSamples` - Browse available samples via picker
 - `:StrudelPatterns` - Browse saved patterns via picker
 
+#### `lua/strudel/lsp.lua`
+LSP client setup:
+- Auto-starts LSP for configured filetypes
+- Uses `vim.lsp.start()` directly (no lspconfig needed)
+- Provides completions, hover, and diagnostics for mini-notation
+
 #### `lua/strudel/picker.lua`
 Picker abstraction supporting multiple backends:
 - **Snacks.nvim** (preferred) - Modern, fast picker
@@ -149,7 +155,7 @@ Picker abstraction supporting multiple backends:
   - `error` - Evaluation or runtime errors
 
 #### `server/src/lsp.ts`
-LSP server for mini-notation support (runs on stdio or TCP):
+LSP server for mini-notation support (runs on stdio):
 - **Completions**: Sample names, function names, scale names, note names
 - **Hover**: Documentation for functions, samples, and mini-notation syntax
 - **Diagnostics**: Syntax errors in mini-notation strings, invalid sample names
@@ -228,42 +234,30 @@ The key challenge is mapping audio events back to source code. Approaches:
 
 ```lua
 {
-  'username/strudel.nvim',
+  'username/nvim-strudel',
   dependencies = {
     -- Optional: for picker functionality
     'folke/snacks.nvim',        -- preferred
     -- or 'nvim-telescope/telescope.nvim',
-    
-    -- Optional: for managed server installation
-    'williamboman/mason.nvim',
   },
   ft = { 'strudel', 'javascript', 'typescript' },
   cmd = { 'StrudelPlay', 'StrudelEval', 'StrudelConnect' },
-  keys = {
-    { '<leader>sp', '<cmd>StrudelPlay<cr>', desc = 'Strudel Play' },
-    { '<leader>ss', '<cmd>StrudelStop<cr>', desc = 'Strudel Stop' },
-    { '<leader>se', '<cmd>StrudelEval<cr>', desc = 'Strudel Eval' },
-  },
+  build = 'cd server && npm install && npm run build',
   opts = {
     -- see Configuration Options below
   },
 }
 ```
 
-### Server Installation
+### Server Build
 
-**Option 1: Mason (recommended)**
-```vim
-:MasonInstall strudel-server
-```
+The server is built automatically via lazy.nvim's `build` step when the plugin is installed or updated. The build step runs:
 
-**Option 2: Manual**
 ```bash
-cd ~/.local/share/nvim/lazy/strudel.nvim/server
-npm install && npm run build
+cd server && npm install && npm run build
 ```
 
-The plugin auto-detects the server location (Mason > manual > dev fallback).
+This compiles the TypeScript server to `server/dist/`.
 
 ## Configuration Options
 
@@ -287,6 +281,21 @@ require('strudel').setup({
   conceal = {
     enabled = true,
     char = '▶',
+  },
+  
+  -- Keymaps (disabled by default)
+  keymaps = {
+    enabled = false,
+    eval = '<C-CR>',
+    play = '<leader>sp',
+    stop = '<leader>ss',
+    pause = '<leader>sx',
+    hush = '<leader>sh',
+  },
+  
+  -- LSP for mini-notation
+  lsp = {
+    enabled = true,
   },
   
   -- Picker backend: 'auto', 'snacks', or 'telescope'
@@ -326,115 +335,15 @@ require('strudel').setup({
 - Log detailed errors for debugging
 - Gracefully handle server disconnection
 
-## Server Installation & Mason Integration
-
-The backend server is distributed as part of this repository and can be installed via Mason.
-
-### Mason Registry Package
-
-The server is registered with [mason-registry](https://github.com/mason-org/mason-registry) as `strudel-server`. Mason handles:
-- Downloading the server from GitHub releases
-- Installing Node.js dependencies in an isolated environment
-- Providing the executable path to the plugin
-
-**Installation via Mason:**
-```vim
-:MasonInstall strudel-server
-```
-
-**mason-registry package definition** (submitted to mason-org/mason-registry):
-```yaml
-name: strudel-server
-description: Backend server for strudel.nvim - live coding music in Neovim
-homepage: https://github.com/username/strudel.nvim
-licenses:
-  - AGPL-3.0
-languages: []
-categories:
-  - LSP
-
-source:
-  id: pkg:github/username/strudel.nvim@{{version}}
-  asset:
-    - target: unix
-      file: strudel-server-{{version}}.tar.gz
-  build:
-    run: |
-      cd server && npm ci && npm run build
-
-bin:
-  strudel-server: server/dist/index.js
-```
-
-### GitHub Release Workflow
-
-On each tagged release, GitHub Actions builds and packages the server:
-
-1. Checkout at tag
-2. `cd server && npm ci && npm run build`
-3. Create tarball with `dist/`, `package.json`, `node_modules/` (production only)
-4. Attach to GitHub release
-
-### Plugin Auto-Detection
-
-The plugin automatically detects the server location:
-
-```lua
--- Order of precedence:
--- 1. User-configured path (server.cmd)
--- 2. Mason installation (via mason-registry)
--- 3. Development mode (./server/dist/index.js if exists)
-
-require('strudel').setup({
-  server = {
-    -- Optional: override server command
-    -- cmd = { 'node', '/path/to/custom/server/index.js' },
-    
-    -- Mason integration (default: true)
-    use_mason = true,
-  },
-})
-```
-
-**Detection logic in plugin:**
-```lua
-local function get_server_cmd()
-  -- 1. User override
-  if config.server.cmd then
-    return config.server.cmd
-  end
-  
-  -- 2. Mason installation
-  if config.server.use_mason then
-    local mason_registry = require('mason-registry')
-    if mason_registry.is_installed('strudel-server') then
-      local pkg = mason_registry.get_package('strudel-server')
-      return { 'node', pkg:get_install_path() .. '/server/dist/index.js' }
-    end
-  end
-  
-  -- 3. Development fallback (server in plugin directory)
-  local plugin_root = vim.fn.fnamemodify(debug.getinfo(1, 'S').source:sub(2), ':h:h:h')
-  local dev_server = plugin_root .. '/server/dist/index.js'
-  if vim.fn.filereadable(dev_server) == 1 then
-    return { 'node', dev_server }
-  end
-  
-  return nil -- Will show error to user
-end
-```
-
 ## Dependencies
 
 ### Runtime
 - Neovim >= 0.9.0 (for modern extmark features)
 - Node.js >= 18.0 (for Strudel packages)
 - Audio output device
-- **Optional**: Mason.nvim (for managed server installation)
 
 ### Lua (Plugin)
 - No external Lua dependencies (uses Neovim built-ins)
-- Optional: mason.nvim, mason-registry
 
 ### Node.js (Server)
 ```json
@@ -444,7 +353,8 @@ end
     "@strudel/mini": "^1.0.0",
     "@strudel/webaudio": "^1.0.0",
     "@strudel/tonal": "^1.0.0",
-    "ws": "^8.0.0"
+    "ws": "^8.0.0",
+    "vscode-languageserver": "^9.0.0"
   },
   "devDependencies": {
     "typescript": "^5.0.0",
@@ -456,7 +366,6 @@ end
 
 ## Future Enhancements
 
-- [ ] Treesitter grammar for Strudel mini-notation
 - [ ] Multiple buffer support (layered patterns)
 - [ ] OSC output for external synths
 - [ ] Recording/export functionality

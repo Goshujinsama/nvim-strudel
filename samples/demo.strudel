@@ -1,0 +1,4 @@
+// Demo Strudel pattern - basic drum beat
+// Evaluate with :StrudelEval, then :StrudelPlay
+
+s("bd sd:2 [bd bd] sd").gain(0.8)
