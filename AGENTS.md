@@ -283,15 +283,115 @@ require('strudel').setup({
 - Log detailed errors for debugging
 - Gracefully handle server disconnection
 
+## Server Installation & Mason Integration
+
+The backend server is distributed as part of this repository and can be installed via Mason.
+
+### Mason Registry Package
+
+The server is registered with [mason-registry](https://github.com/mason-org/mason-registry) as `strudel-server`. Mason handles:
+- Downloading the server from GitHub releases
+- Installing Node.js dependencies in an isolated environment
+- Providing the executable path to the plugin
+
+**Installation via Mason:**
+```vim
+:MasonInstall strudel-server
+```
+
+**mason-registry package definition** (submitted to mason-org/mason-registry):
+```yaml
+name: strudel-server
+description: Backend server for strudel.nvim - live coding music in Neovim
+homepage: https://github.com/username/strudel.nvim
+licenses:
+  - AGPL-3.0
+languages: []
+categories:
+  - LSP
+
+source:
+  id: pkg:github/username/strudel.nvim@{{version}}
+  asset:
+    - target: unix
+      file: strudel-server-{{version}}.tar.gz
+  build:
+    run: |
+      cd server && npm ci && npm run build
+
+bin:
+  strudel-server: server/dist/index.js
+```
+
+### GitHub Release Workflow
+
+On each tagged release, GitHub Actions builds and packages the server:
+
+1. Checkout at tag
+2. `cd server && npm ci && npm run build`
+3. Create tarball with `dist/`, `package.json`, `node_modules/` (production only)
+4. Attach to GitHub release
+
+### Plugin Auto-Detection
+
+The plugin automatically detects the server location:
+
+```lua
+-- Order of precedence:
+-- 1. User-configured path (server.cmd)
+-- 2. Mason installation (via mason-registry)
+-- 3. Development mode (./server/dist/index.js if exists)
+
+require('strudel').setup({
+  server = {
+    -- Optional: override server command
+    -- cmd = { 'node', '/path/to/custom/server/index.js' },
+    
+    -- Mason integration (default: true)
+    use_mason = true,
+  },
+})
+```
+
+**Detection logic in plugin:**
+```lua
+local function get_server_cmd()
+  -- 1. User override
+  if config.server.cmd then
+    return config.server.cmd
+  end
+  
+  -- 2. Mason installation
+  if config.server.use_mason then
+    local mason_registry = require('mason-registry')
+    if mason_registry.is_installed('strudel-server') then
+      local pkg = mason_registry.get_package('strudel-server')
+      return { 'node', pkg:get_install_path() .. '/server/dist/index.js' }
+    end
+  end
+  
+  -- 3. Development fallback (server in plugin directory)
+  local plugin_root = vim.fn.fnamemodify(debug.getinfo(1, 'S').source:sub(2), ':h:h:h')
+  local dev_server = plugin_root .. '/server/dist/index.js'
+  if vim.fn.filereadable(dev_server) == 1 then
+    return { 'node', dev_server }
+  end
+  
+  return nil -- Will show error to user
+end
+```
+
 ## Dependencies
 
 ### Runtime
 - Neovim >= 0.9.0 (for modern extmark features)
 - Node.js >= 18.0 (for Strudel packages)
 - Audio output device
+- **Optional**: Mason.nvim (for managed server installation)
 
 ### Lua (Plugin)
 - No external Lua dependencies (uses Neovim built-ins)
+- Optional: mason.nvim, mason-registry
 
 ### Node.js (Server)
 ```json
