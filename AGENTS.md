@@ -34,6 +34,7 @@
 │  │  - Pattern event tracking (which elements are active)     │  │
 │  │  - WebSocket server for Neovim communication              │  │
 │  │  - Source map tracking (code position → sound events)     │  │
+│  │  - LSP server for mini-notation (completions, hover, diag)│  │
 │  └───────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -68,6 +69,7 @@ strudel.nvim/
 │       ├── strudel-engine.ts # Strudel pattern evaluation wrapper
 │       ├── audio.ts          # Audio output management
 │       ├── websocket.ts      # WebSocket server for Neovim
+│       ├── lsp.ts            # LSP server for mini-notation
 │       ├── source-map.ts     # Track code positions to events
 │       └── types.ts          # Shared TypeScript types
 │
@@ -145,6 +147,15 @@ Picker abstraction supporting multiple backends:
   - `active` - Server → client, list of active source positions
   - `cycle` - Current cycle number/position
   - `error` - Evaluation or runtime errors
+
+#### `server/src/lsp.ts`
+LSP server for mini-notation support (runs on stdio or TCP):
+- **Completions**: Sample names, function names, scale names, note names
+- **Hover**: Documentation for functions, samples, and mini-notation syntax
+- **Diagnostics**: Syntax errors in mini-notation strings, invalid sample names
+- **Signature Help**: Function parameter hints
+- Leverages `@strudel/mini` parser for accurate mini-notation understanding
+- Neovim connects via `vim.lsp.start()` with appropriate config
 
 ## Communication Protocol
 
