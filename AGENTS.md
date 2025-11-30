@@ -54,6 +54,7 @@ strudel.nvim/
 │       ├── commands.lua      # User commands registration
 │       ├── highlights.lua    # Highlight group definitions
 │       ├── visualizer.lua    # Real-time highlight/conceal updates
+│       ├── picker.lua        # Picker abstraction (Snacks/Telescope)
 │       └── utils.lua         # Shared utilities
 │
 ├── plugin/
@@ -114,6 +115,15 @@ User commands:
 - `:StrudelEval` - Evaluate current buffer/selection
 - `:StrudelConnect` - Connect to server
 - `:StrudelStatus` - Show connection/playback status
+- `:StrudelSamples` - Browse available samples via picker
+- `:StrudelPatterns` - Browse saved patterns via picker
+
+#### `lua/strudel/picker.lua`
+Picker abstraction supporting multiple backends:
+- **Snacks.nvim** (preferred) - Modern, fast picker
+- **Telescope.nvim** - Fallback for users without Snacks
+- Auto-detects available picker and uses appropriate backend
+- Provides unified API for browsing samples, patterns, and sounds
 
 ### Backend Server (Node.js/TypeScript)
 
@@ -225,6 +235,10 @@ require('strudel').setup({
     char = '▶',
   },
   
+  -- Picker backend: 'auto', 'snacks', or 'telescope'
+  -- 'auto' prefers Snacks if available, falls back to Telescope
+  picker = 'auto',
+  
   -- Auto-evaluate on save
   auto_eval = false,
   
@@ -288,7 +302,6 @@ require('strudel').setup({
 
 ## Future Enhancements
 
-- [ ] Telescope integration for pattern browser
 - [ ] Treesitter grammar for Strudel mini-notation
 - [ ] Multiple buffer support (layered patterns)
 - [ ] OSC output for external synths
