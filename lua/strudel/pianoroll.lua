@@ -21,6 +21,7 @@ local M = {}
 ---@field mode string Visualization mode: 'auto', 'tracks', 'notes', or 'drums'
 ---@field notes table[]|nil Note events for braille mode
 ---@field note_range table|nil {min, max} MIDI note range
+---@field smooth boolean Smooth scrolling (playhead at left edge)
 
 ---@type PianorollState
 local state = {
@@ -35,6 +36,7 @@ local state = {
   mode = 'auto', -- 'auto', 'tracks', 'notes', or 'drums'
   notes = nil,
   note_range = nil,
+  smooth = true, -- smooth scrolling by default
 }
 
 -- Unicode/ASCII characters for rendering
@@ -214,8 +216,15 @@ local function render_braille_notes(notes, note_range, width, phase)
       end
     end
 
-    -- Add playhead
-    local playhead_col = math.floor(phase * width / state.display_cycles)
+    -- Add playhead highlight
+    -- In smooth mode: playhead is always at left edge (col 0)
+    -- In non-smooth mode: playhead moves with phase
+    local playhead_col
+    if state.smooth then
+      playhead_col = 0
+    else
+      playhead_col = math.floor(phase * width / state.display_cycles)
+    end
     if playhead_col >= 0 and playhead_col < width then
       local byte_start = playhead_col * 3
       local byte_end = byte_start + 3
@@ -355,7 +364,14 @@ local function render_track_line(track, width, phase)
   end
 
   -- Draw playhead
-  local playhead_col = math.floor(phase * width / state.display_cycles) + 1
+  -- In smooth mode: playhead is always at left edge (col 1)
+  -- In non-smooth mode: playhead moves with phase
+  local playhead_col
+  if state.smooth then
+    playhead_col = 1
+  else
+    playhead_col = math.floor(phase * width / state.display_cycles) + 1
+  end
   if playhead_col >= 1 and playhead_col <= width then
     -- Only replace if it's empty space
     if line[playhead_col] == CHARS.empty then
@@ -611,7 +627,14 @@ render_drums = function(tracks, cycle, phase, width)
     end
 
     -- Add playhead highlight
-    local playhead_col = math.floor(phase * content_width / state.display_cycles)
+    -- In smooth mode: playhead is always at left edge (col 0)
+    -- In non-smooth mode: playhead moves with phase
+    local playhead_col
+    if state.smooth then
+      playhead_col = 0
+    else
+      playhead_col = math.floor(phase * content_width / state.display_cycles)
+    end
     if playhead_col >= 0 and playhead_col < content_width then
       local byte_start = playhead_col * 3
       local byte_end = byte_start + 3
@@ -801,6 +824,7 @@ local function request_visualization()
   client.send({
     type = 'queryVisualization',
     cycles = state.display_cycles,
+    smooth = state.smooth,
   })
 end
 
@@ -944,6 +968,25 @@ end
 ---@return string
 function M.get_mode()
   return state.mode
+end
+
+---Set smooth scrolling mode
+---@param enabled boolean
+function M.set_smooth(enabled)
+  state.smooth = enabled
+  utils.log('Pianoroll smooth scrolling: ' .. (enabled and 'on' or 'off'))
+end
+
+---Get smooth scrolling mode
+---@return boolean
+function M.get_smooth()
+  return state.smooth
+end
+
+---Toggle smooth scrolling
+function M.toggle_smooth()
+  state.smooth = not state.smooth
+  utils.log('Pianoroll smooth scrolling: ' .. (state.smooth and 'on' or 'off'))
 end
 
 return M

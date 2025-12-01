@@ -727,8 +727,9 @@ export class StrudelEngine {
    * Returns haps grouped by track (sound/note name) for the display window
    * Also includes note-level data for braille pianoroll mode
    * @param displayCycles Number of cycles to show in the visualization
+   * @param smooth If true, window scrolls smoothly with playhead at left edge
    */
-  queryVisualization(displayCycles = 2): {
+  queryVisualization(displayCycles = 2, smooth = true): {
     cycle: number;
     phase: number;
     tracks: { name: string; events: VisualizationEvent[] }[];
@@ -746,8 +747,10 @@ export class StrudelEngine {
     const currentCycle = scheduler?.now?.() || 0;
     const phase = currentCycle % 1;
 
-    // Query window: from start of current cycle to end of display
-    const windowStart = Math.floor(currentCycle);
+    // Query window: 
+    // - smooth=true: window starts at current position (playhead at left)
+    // - smooth=false: window starts at cycle boundary (original behavior)
+    const windowStart = smooth ? currentCycle : Math.floor(currentCycle);
     const windowEnd = windowStart + displayCycles;
 
     try {

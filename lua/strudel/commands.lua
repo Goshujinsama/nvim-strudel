@@ -287,11 +287,15 @@ function M.setup()
         pianoroll.open()
       elseif mode == 'close' then
         pianoroll.close()
+      elseif mode == 'smooth' then
+        pianoroll.set_smooth(true)
+      elseif mode == 'nosmooth' or mode == 'jump' then
+        pianoroll.set_smooth(false)
       elseif mode == 'auto' or mode == 'tracks' or mode == 'notes' or mode == 'drums' then
         pianoroll.set_mode(mode)
         utils.log('Pianoroll mode: ' .. mode)
       else
-        utils.warn('Unknown mode: ' .. mode .. ' (use: auto, tracks, notes, drums, toggle, open, close)')
+        utils.warn('Unknown mode: ' .. mode .. ' (use: auto, tracks, notes, drums, smooth, nosmooth, toggle, open, close)')
       end
     else
       pianoroll.toggle()
@@ -299,9 +303,9 @@ function M.setup()
   end, {
     nargs = '?',
     complete = function()
-      return { 'auto', 'tracks', 'notes', 'drums', 'toggle', 'open', 'close' }
+      return { 'auto', 'tracks', 'notes', 'drums', 'smooth', 'nosmooth', 'toggle', 'open', 'close' }
     end,
-    desc = 'Toggle Strudel pianoroll or set mode (auto/tracks/notes/drums)',
+    desc = 'Toggle Strudel pianoroll or set mode (auto/tracks/notes/drums/smooth/nosmooth)',
   })
 
   -- Setup filetype-based keymaps

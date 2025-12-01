@@ -28,6 +28,7 @@ export interface GetBanksMessage {
 export interface QueryVisualizationMessage {
   type: 'queryVisualization';
   cycles?: number; // How many cycles to query (default 2)
+  smooth?: boolean; // If true, smooth scrolling (playhead at left edge)
 }
 
 export type ClientMessage = EvalMessage | ControlMessage | GetSamplesMessage | GetSoundsMessage | GetBanksMessage | QueryVisualizationMessage;

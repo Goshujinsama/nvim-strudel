@@ -146,7 +146,7 @@ async function main() {
         break;
 
       case 'queryVisualization': {
-        const vizData = engine.queryVisualization(msg.cycles || 2);
+        const vizData = engine.queryVisualization(msg.cycles || 2, msg.smooth !== false);
         if (vizData) {
           server.send(ws, {
             type: 'visualization',
