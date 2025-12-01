@@ -564,13 +564,14 @@ export class StrudelEngine {
           if (this.isPausing) {
             this.paused = true;
             // playing stays true
+            // Keep broadcasting so pianoroll maintains playhead position
             this.isPausing = false;
           } else {
             // It's a stop
             this.playing = false;
             this.paused = false;
+            this.stopBroadcasting();
           }
-          this.stopBroadcasting();
         }
       },
       onUpdateState: (state: any) => {
