@@ -4670,11 +4670,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'bypass',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Bypass effects',
+    documentation: 'Bypasses audio effects when true.',
     signatures: [{
-      label: 'bypass(...)',
-      parameters: [],
+      label: 'bypass(toggle)',
+      parameters: [{ label: 'toggle', documentation: 'Bypass on/off' }],
     }],
   },
   {
@@ -4802,11 +4802,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'ctlNum',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'MIDI control number',
+    documentation: 'Sets the MIDI control change number.',
     signatures: [{
-      label: 'ctlNum(...)',
-      parameters: [],
+      label: 'ctlNum(n)',
+      parameters: [{ label: 'n', documentation: 'Control number (0-127)' }],
     }],
   },
   {
@@ -4922,11 +4922,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'enhance',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Audio enhancer',
+    documentation: 'Enhances audio clarity/presence.',
     signatures: [{
-      label: 'enhance(...)',
-      parameters: [],
+      label: 'enhance(amount)',
+      parameters: [{ label: 'amount', documentation: 'Enhancement amount' }],
     }],
   },
   {
@@ -4984,29 +4984,29 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'fadeInTime',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Fade in time',
+    documentation: 'Fade in time for the sound in seconds.',
     signatures: [{
-      label: 'fadeInTime(...)',
-      parameters: [],
+      label: 'fadeInTime(seconds)',
+      parameters: [{ label: 'seconds', documentation: 'Fade in duration' }],
     }],
   },
   {
     name: 'fadeOutTime',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Fade out time',
+    documentation: 'Fade out time for the sound in seconds.',
     signatures: [{
-      label: 'fadeOutTime(...)',
-      parameters: [],
+      label: 'fadeOutTime(seconds)',
+      parameters: [{ label: 'seconds', documentation: 'Fade out duration' }],
     }],
   },
   {
     name: 'fadeTime',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Fade time',
+    documentation: 'Sets both fade in and fade out time.',
     signatures: [{
-      label: 'fadeTime(...)',
-      parameters: [],
+      label: 'fadeTime(seconds)',
+      parameters: [{ label: 'seconds', documentation: 'Fade duration' }],
     }],
   },
   {
@@ -5029,20 +5029,20 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'fmrelease',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'FM release time',
+    documentation: 'FM synth release time.',
     signatures: [{
-      label: 'fmrelease(...)',
-      parameters: [],
+      label: 'fmrelease(time)',
+      parameters: [{ label: 'time', documentation: 'Release time in seconds' }],
     }],
   },
   {
     name: 'fmvelocity',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'FM velocity sensitivity',
+    documentation: 'FM synth velocity sensitivity.',
     signatures: [{
-      label: 'fmvelocity(...)',
-      parameters: [],
+      label: 'fmvelocity(amount)',
+      parameters: [{ label: 'amount', documentation: 'Velocity sensitivity' }],
     }],
   },
   {
@@ -5128,11 +5128,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'harmonic',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Harmonic series',
+    documentation: 'Adds harmonic overtones to the sound.',
     signatures: [{
-      label: 'harmonic(...)',
-      parameters: [],
+      label: 'harmonic(n)',
+      parameters: [{ label: 'n', documentation: 'Harmonic number' }],
     }],
   },
   {
@@ -5227,11 +5227,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'krush',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Bit crush effect',
+    documentation: 'Bit-crusher distortion effect. Reduces bit depth.',
     signatures: [{
-      label: 'krush(...)',
-      parameters: [],
+      label: 'krush(amount)',
+      parameters: [{ label: 'amount', documentation: 'Crush amount (higher = more distortion)' }],
     }],
   },
   {
@@ -5416,38 +5416,38 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'octer',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Octave effect',
+    documentation: 'Octave effect/harmonizer that adds pitched copies of the sound.',
     signatures: [{
-      label: 'octer(...)',
-      parameters: [],
+      label: 'octer(amount)',
+      parameters: [{ label: 'amount', documentation: 'Effect amount' }],
     }],
   },
   {
     name: 'octersub',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Octave sub effect',
+    documentation: 'Sub-octave level for the octer effect.',
     signatures: [{
-      label: 'octersub(...)',
-      parameters: [],
+      label: 'octersub(amount)',
+      parameters: [{ label: 'amount', documentation: 'Sub-octave amount' }],
     }],
   },
   {
     name: 'octersubsub',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Octave sub-sub effect',
+    documentation: 'Two-octave-down level for the octer effect.',
     signatures: [{
-      label: 'octersubsub(...)',
-      parameters: [],
+      label: 'octersubsub(amount)',
+      parameters: [{ label: 'amount', documentation: 'Sub-sub-octave amount' }],
     }],
   },
   {
     name: 'offset',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Time offset',
+    documentation: 'Offsets the pattern in time.',
     signatures: [{
-      label: 'offset(...)',
-      parameters: [],
+      label: 'offset(cycles)',
+      parameters: [{ label: 'cycles', documentation: 'Number of cycles to offset' }],
     }],
   },
   {
@@ -5524,11 +5524,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'partials',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Partials control',
+    documentation: 'Controls the number of partials/harmonics in synthesis.',
     signatures: [{
-      label: 'partials(...)',
-      parameters: [],
+      label: 'partials(n)',
+      parameters: [{ label: 'n', documentation: 'Number of partials' }],
     }],
   },
   {
@@ -5702,11 +5702,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'polyTouch',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Polyphonic aftertouch',
+    documentation: 'MIDI polyphonic aftertouch (key pressure).',
     signatures: [{
-      label: 'polyTouch(...)',
-      parameters: [],
+      label: 'polyTouch(value)',
+      parameters: [{ label: 'value', documentation: 'Aftertouch value (0-127)' }],
     }],
   },
   {
@@ -5756,11 +5756,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'rate',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Playback rate',
+    documentation: 'Sample playback rate. 1 = normal, 2 = double speed, 0.5 = half speed.',
     signatures: [{
-      label: 'rate(...)',
-      parameters: [],
+      label: 'rate(speed)',
+      parameters: [{ label: 'speed', documentation: 'Playback rate multiplier' }],
     }],
   },
   {
@@ -5927,11 +5927,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'slide',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Pitch slide',
+    documentation: 'Slides pitch between notes (portamento).',
     signatures: [{
-      label: 'slide(...)',
-      parameters: [],
+      label: 'slide(amount)',
+      parameters: [{ label: 'amount', documentation: 'Slide amount' }],
     }],
   },
   {
@@ -6163,11 +6163,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'sustainpedal',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Sustain pedal',
+    documentation: 'MIDI sustain pedal control.',
     signatures: [{
-      label: 'sustainpedal(...)',
-      parameters: [],
+      label: 'sustainpedal(value)',
+      parameters: [{ label: 'value', documentation: 'Pedal value (0-127)' }],
     }],
   },
   {
@@ -6235,11 +6235,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'triode',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Triode distortion',
+    documentation: 'Triode tube distortion effect.',
     signatures: [{
-      label: 'triode(...)',
-      parameters: [],
+      label: 'triode(amount)',
+      parameters: [{ label: 'amount', documentation: 'Distortion amount' }],
     }],
   },
   {
@@ -6307,11 +6307,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'voice',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Voice control',
+    documentation: 'Selects a voice or algorithm for FM synth.',
     signatures: [{
-      label: 'voice(...)',
-      parameters: [],
+      label: 'voice(n)',
+      parameters: [{ label: 'n', documentation: 'Voice number or name' }],
     }],
   },
   {
@@ -6361,38 +6361,38 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'wavetablePhaseRand',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Wavetable phase randomization',
+    documentation: 'Phase randomization for wavetable synthesis.',
     signatures: [{
-      label: 'wavetablePhaseRand(...)',
-      parameters: [],
+      label: 'wavetablePhaseRand(amount)',
+      parameters: [{ label: 'amount', documentation: 'Phase randomization amount' }],
     }],
   },
   {
     name: 'wavetablePosition',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Wavetable position',
+    documentation: 'Position within the wavetable (0-1).',
     signatures: [{
-      label: 'wavetablePosition(...)',
-      parameters: [],
+      label: 'wavetablePosition(pos)',
+      parameters: [{ label: 'pos', documentation: 'Position in wavetable (0-1)' }],
     }],
   },
   {
     name: 'wavetableWarp',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Wavetable warp',
+    documentation: 'Warp/morph amount for wavetable.',
     signatures: [{
-      label: 'wavetableWarp(...)',
-      parameters: [],
+      label: 'wavetableWarp(amount)',
+      parameters: [{ label: 'amount', documentation: 'Warp amount' }],
     }],
   },
   {
     name: 'wavetableWarpMode',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Wavetable warp mode',
+    documentation: 'Warp mode for wavetable synthesis.',
     signatures: [{
-      label: 'wavetableWarpMode(...)',
-      parameters: [],
+      label: 'wavetableWarpMode(mode)',
+      parameters: [{ label: 'mode', documentation: 'Warp mode' }],
     }],
   },
   {
@@ -6469,20 +6469,20 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'zcrush',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'ZZFX crush',
+    documentation: 'ZZFX bit-crusher effect.',
     signatures: [{
-      label: 'zcrush(...)',
-      parameters: [],
+      label: 'zcrush(amount)',
+      parameters: [{ label: 'amount', documentation: 'Crush amount' }],
     }],
   },
   {
     name: 'zdelay',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'ZZFX delay',
+    documentation: 'ZZFX delay effect.',
     signatures: [{
-      label: 'zdelay(...)',
-      parameters: [],
+      label: 'zdelay(time)',
+      parameters: [{ label: 'time', documentation: 'Delay time' }],
     }],
   },
   {
@@ -6496,20 +6496,20 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'zmod',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'ZZFX modulation',
+    documentation: 'ZZFX modulation effect.',
     signatures: [{
-      label: 'zmod(...)',
-      parameters: [],
+      label: 'zmod(amount)',
+      parameters: [{ label: 'amount', documentation: 'Modulation amount' }],
     }],
   },
   {
     name: 'znoise',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'ZZFX noise',
+    documentation: 'ZZFX noise effect.',
     signatures: [{
-      label: 'znoise(...)',
-      parameters: [],
+      label: 'znoise(amount)',
+      parameters: [{ label: 'amount', documentation: 'Noise amount' }],
     }],
   },
   {
@@ -6532,19 +6532,19 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'zrand',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'ZZFX randomness',
+    documentation: 'ZZFX randomness effect.',
     signatures: [{
-      label: 'zrand(...)',
-      parameters: [],
+      label: 'zrand(amount)',
+      parameters: [{ label: 'amount', documentation: 'Randomness amount' }],
     }],
   },
   {
     name: 'zzfx',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'ZZFX synthesizer',
+    documentation: 'ZZFX tiny sound synthesizer. Takes ZZFX parameter array.',
     signatures: [{
-      label: 'zzfx(...)',
+      label: 'zzfx(...params)',
       parameters: [],
     }],
   },
