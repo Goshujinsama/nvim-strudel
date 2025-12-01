@@ -161,6 +161,8 @@ async function main() {
   // Start the server
   try {
     await server.start();
+    // Update state file with the actual port
+    engine.setPort(config.port);
   } catch (err) {
     console.error('[strudel-server] Failed to start:', err);
     process.exit(1);

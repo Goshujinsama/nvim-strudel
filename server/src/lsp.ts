@@ -4,6 +4,15 @@
  * Provides completions, hover, diagnostics, signature help, and code actions
  */
 
+// IMPORTANT: Patch console.log BEFORE importing @strudel/mini
+// @strudel/core prints "🌀 @strudel/core loaded 🌀" to stdout on import,
+// which corrupts the LSP JSON-RPC protocol. We redirect it to stderr.
+const originalLog = console.log;
+console.log = (...args: unknown[]) => {
+  // Redirect to stderr to avoid corrupting LSP protocol
+  console.error(...args);
+};
+
 import {
   createConnection,
   TextDocuments,
@@ -30,9 +39,12 @@ import {
 
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
-// Import mini-notation parser for AST-based validation
+// Dynamic import for @strudel/mini to ensure console.log patch runs first
 // @ts-ignore - @strudel/mini has no type declarations
-import { parse as parseMini, SyntaxError as MiniSyntaxError, getLeaves as getMiniLeaves } from '@strudel/mini';
+const { parse: parseMini, getLeaves: getMiniLeaves } = await import('@strudel/mini');
+
+// Restore console.log after imports (connection.console.log goes to the right place anyway)
+console.log = originalLog;
 
 // Create connection using stdio
 const connection = createConnection(ProposedFeatures.all);
@@ -72,6 +84,12 @@ const SCALE_NAMES = [
   'major', 'minor', 'dorian', 'phrygian', 'lydian', 'mixolydian', 'locrian', 'aeolian', 'ionian',
   'harmonicMinor', 'melodicMinor', 'pentatonic', 'blues', 'chromatic',
   'wholetone', 'diminished', 'augmented', 'bebop', 'hungarian', 'spanish',
+];
+
+// Voicing mode names (used with .mode() function)
+// Format: "mode" or "mode:anchor" e.g., "above:c3"
+const VOICING_MODES = [
+  'above', 'below', 'between', 'duck', 'root', 'rootless',
 ];
 
 // Effects/modifiers in mini-notation
@@ -1055,6 +1073,60 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
       parameters: [{ label: 'pattern', documentation: 'Pattern of chord names' }],
     }],
   },
+  {
+    name: 'chord',
+    detail: 'Chord',
+    documentation: 'Play a chord by name',
+    signatures: [{
+      label: 'chord(pattern)',
+      parameters: [{ label: 'pattern', documentation: 'Pattern of chord names, e.g., "C Am F G" or "Cm7 Fmaj7"' }],
+    }],
+  },
+  {
+    name: 'mode',
+    detail: 'Scale mode',
+    documentation: 'Set the scale mode for note interpretation',
+    signatures: [{
+      label: 'mode(pattern)',
+      parameters: [{ label: 'pattern', documentation: 'Pattern of mode names, e.g., "major minor dorian"' }],
+    }],
+  },
+  {
+    name: 'voicing',
+    detail: 'Chord voicing',
+    documentation: 'Set chord voicing style',
+    signatures: [{
+      label: 'voicing(style)',
+      parameters: [{ label: 'style', documentation: 'Voicing style, e.g., "default", "lefthand", "open", "drop2"' }],
+    }],
+  },
+  {
+    name: 'voicings',
+    detail: 'Chord voicings',
+    documentation: 'Define custom chord voicings',
+    signatures: [{
+      label: 'voicings(dictionary)',
+      parameters: [{ label: 'dictionary', documentation: 'Voicing dictionary object' }],
+    }],
+  },
+  {
+    name: 'anchor',
+    detail: 'Voicing anchor',
+    documentation: 'Set the anchor note for chord voicings',
+    signatures: [{
+      label: 'anchor(note)',
+      parameters: [{ label: 'note', documentation: 'Anchor note, e.g., "c3"' }],
+    }],
+  },
+  {
+    name: 'octave',
+    detail: 'Octave',
+    documentation: 'Set the octave for notes',
+    signatures: [{
+      label: 'octave(n)',
+      parameters: [{ label: 'n', documentation: 'Octave number (e.g., 3, 4, 5)' }],
+    }],
+  },
   // More effects
   {
     name: 'distort',
@@ -1338,11 +1410,14 @@ const TYPO_CORRECTIONS: Record<string, string> = {
 };
 
 /**
- * Get all available samples (dynamic + defaults)
+ * Get all available samples (dynamic + defaults merged)
+ * Always includes default samples as a baseline, adds dynamic samples on top
  */
 function getAllSamples(): string[] {
   if (dynamicSamples.length > 0) {
-    return dynamicSamples;
+    // Merge defaults with dynamic, removing duplicates
+    const combined = new Set([...DEFAULT_SAMPLE_NAMES, ...dynamicSamples]);
+    return Array.from(combined);
   }
   return DEFAULT_SAMPLE_NAMES;
 }
@@ -1520,54 +1595,128 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
 connection.onInitialized(() => {
   connection.console.log('Strudel LSP initialized');
   
-  // Try to connect to strudel server to get dynamic samples
-  tryConnectToEngine();
+  // Connect to engine and load samples
+  connectToEngine();
 });
 
 /**
- * Try to connect to the strudel engine to get dynamic sample list
+ * TCP client state for engine connection
  */
-async function tryConnectToEngine() {
-  try {
-    // Try to connect via WebSocket to get sample list
-    const WebSocket = (await import('ws')).default;
-    const ws = new WebSocket('ws://127.0.0.1:37812');
+let engineSocket: import('net').Socket | null = null;
+let engineBuffer = '';
+let stopWatching: (() => void) | null = null;
+let reconnectTimer: NodeJS.Timeout | null = null;
+
+/**
+ * Connect to the engine via TCP and request samples
+ * Uses state file to get connection info, watches for engine restarts
+ */
+async function connectToEngine() {
+  const net = await import('net');
+  const { readEngineState, watchEngineState, isEngineRunning } = await import('./engine-state.js');
+  
+  // Function to attempt connection
+  const tryConnect = (state: { port: number; pid: number }) => {
+    if (engineSocket) {
+      engineSocket.destroy();
+      engineSocket = null;
+    }
     
-    ws.on('open', () => {
-      connection.console.log('Connected to Strudel engine for sample list');
-      ws.send(JSON.stringify({ type: 'getSamples' }));
-      ws.send(JSON.stringify({ type: 'getBanks' }));
+    connection.console.log(`Connecting to engine on port ${state.port}...`);
+    
+    const socket = net.createConnection({ port: state.port, host: '127.0.0.1' }, () => {
+      connection.console.log('Connected to engine');
+      engineSocket = socket;
+      
+      // Request samples, banks, and sounds
+      socket.write(JSON.stringify({ type: 'getSamples' }) + '\n');
+      socket.write(JSON.stringify({ type: 'getBanks' }) + '\n');
+      socket.write(JSON.stringify({ type: 'getSounds' }) + '\n');
     });
     
-    ws.on('message', (data: Buffer) => {
-      try {
-        const msg = JSON.parse(data.toString());
-        if (msg.type === 'samples' && Array.isArray(msg.samples)) {
-          dynamicSamples = msg.samples;
-          connection.console.log(`Loaded ${dynamicSamples.length} samples from engine`);
+    socket.on('data', (data) => {
+      engineBuffer += data.toString();
+      
+      // Process newline-delimited JSON messages
+      let newlineIndex;
+      while ((newlineIndex = engineBuffer.indexOf('\n')) !== -1) {
+        const line = engineBuffer.slice(0, newlineIndex);
+        engineBuffer = engineBuffer.slice(newlineIndex + 1);
+        
+        if (line.trim()) {
+          try {
+            const msg = JSON.parse(line);
+            handleEngineMessage(msg);
+          } catch (e) {
+            // Ignore parse errors
+          }
         }
-        if (msg.type === 'banks' && Array.isArray(msg.banks)) {
-          dynamicBanks = msg.banks;
-          connection.console.log(`Loaded ${dynamicBanks.length} banks from engine`);
-        }
-      } catch (e) {
-        // Ignore parse errors
       }
     });
     
-    ws.on('error', () => {
-      connection.console.log('Could not connect to Strudel engine, using default samples');
+    socket.on('error', (err) => {
+      connection.console.log(`Engine connection error: ${err.message}`);
+      engineSocket = null;
     });
     
-    // Close after getting data
-    setTimeout(() => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
-    }, 5000);
-  } catch (e) {
-    connection.console.log('WebSocket not available, using default samples');
+    socket.on('close', () => {
+      connection.console.log('Engine connection closed');
+      engineSocket = null;
+      engineBuffer = '';
+    });
+  };
+  
+  // Handle messages from engine
+  const handleEngineMessage = (msg: any) => {
+    switch (msg.type) {
+      case 'samples':
+        dynamicSamples = msg.samples || [];
+        connection.console.log(`Received ${dynamicSamples.length} samples from engine`);
+        // Re-validate all open documents
+        documents.all().forEach(doc => validateDocument(doc));
+        break;
+      case 'banks':
+        dynamicBanks = msg.banks || [];
+        connection.console.log(`Received ${dynamicBanks.length} banks from engine`);
+        // Re-validate all open documents
+        documents.all().forEach(doc => validateDocument(doc));
+        break;
+      case 'sounds':
+        // Could store synth sounds too if needed
+        connection.console.log(`Received ${msg.sounds?.length || 0} sounds from engine`);
+        break;
+    }
+  };
+  
+  // Initial connection attempt
+  const state = readEngineState();
+  if (state && isEngineRunning(state) && state.port > 0) {
+    tryConnect(state);
+  } else {
+    connection.console.log('Engine not running, waiting for it to start...');
   }
+  
+  // Watch for engine starting/restarting
+  stopWatching = watchEngineState((newState) => {
+    if (newState && isEngineRunning(newState) && newState.port > 0) {
+      // Clear any pending reconnect
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+      
+      // Small delay to let engine fully initialize
+      reconnectTimer = setTimeout(() => {
+        tryConnect(newState);
+      }, 500);
+    } else if (!newState) {
+      connection.console.log('Engine stopped');
+      if (engineSocket) {
+        engineSocket.destroy();
+        engineSocket = null;
+      }
+    }
+  });
 }
 
 /**
@@ -1934,6 +2083,10 @@ async function validateDocument(document: TextDocument): Promise<void> {
   const stringRegex = /(['"])((?:\\.|(?!\1)[^\\])*)\1/g;
   let match;
   
+  // Functions whose string arguments should NOT be validated as mini-notation samples
+  // These take bank names, scale names, or other non-sample identifiers
+  const nonSampleArgFunctions = ['bank', 'scale', 'mode', 'voicing', 'chord', 'struct', 'mask'];
+  
   while ((match = stringRegex.exec(text)) !== null) {
     const content = match[2];
     const stringStartOffset = match.index; // Position of opening quote
@@ -1947,6 +2100,15 @@ async function validateDocument(document: TextDocument): Promise<void> {
     
     // Skip strings that are clearly not mini-notation (contain common code patterns)
     if (content.includes('function') || content.includes('=>') || content.includes('return')) continue;
+    
+    // Check if this string is an argument to a function that doesn't take sample names
+    // Look backwards from the quote to find the function call pattern: .funcName( or funcName(
+    const beforeString = text.slice(Math.max(0, stringStartOffset - 50), stringStartOffset);
+    const funcCallMatch = beforeString.match(/\.?(\w+)\s*\(\s*$/);
+    if (funcCallMatch && nonSampleArgFunctions.includes(funcCallMatch[1])) {
+      // This is an argument to bank(), scale(), etc. - skip sample validation
+      continue;
+    }
     
     // Parse using @strudel/mini for proper AST-based validation
     const parseResult = parseMiniNotation(content);
@@ -2010,11 +2172,20 @@ async function validateDocument(document: TextDocument): Promise<void> {
         // Skip if it's a known sample
         if (samples.some(s => s.toLowerCase() === word.toLowerCase())) continue;
         
+        // Skip if it's a known bank (banks can appear as sample prefixes)
+        if (dynamicBanks.some(b => b.toLowerCase() === word.toLowerCase())) continue;
+        
         // Skip common mini-notation atoms
         if (['x', 't', 'f', 'r', '-', '_'].includes(word.toLowerCase())) continue;
         
         // Skip if it looks like a variable reference
         if (/^[A-Z]/.test(word)) continue;
+        
+        // Skip voicing modes (used with .mode() like "above:c3", "below:c4")
+        if (VOICING_MODES.includes(word.toLowerCase())) continue;
+        
+        // Skip scale names (used with .scale())
+        if (SCALE_NAMES.includes(word.toLowerCase())) continue;
         
         // Calculate position in document
         // leaf.location_.start.offset is relative to the quoted string, subtract 1 for the quote we added
@@ -2051,10 +2222,15 @@ async function validateDocument(document: TextDocument): Promise<void> {
         if (/^[a-g][sb]?[0-9]?$/i.test(word)) continue;
         // Skip if it's a known sample
         if (samples.some(s => s.toLowerCase() === word.toLowerCase())) continue;
+        // Skip if it's a known bank
+        if (dynamicBanks.some(b => b.toLowerCase() === word.toLowerCase())) continue;
         // Skip common words/operators
         if (['x', 't', 'f', 'r', '-', '_'].includes(word.toLowerCase())) continue;
         // Skip if it looks like a variable reference
         if (/^[A-Z]/.test(word)) continue;
+        // Skip voicing modes and scale names
+        if (VOICING_MODES.includes(word.toLowerCase())) continue;
+        if (SCALE_NAMES.includes(word.toLowerCase())) continue;
         
         // Find position of this word in content
         const wordIndex = content.indexOf(word);
@@ -2166,6 +2342,22 @@ documents.onDidChangeContent((event) => {
 
 documents.onDidClose((event) => {
   diagnosticDataMap.delete(event.document.uri);
+});
+
+// Cleanup on shutdown
+connection.onShutdown(() => {
+  if (stopWatching) {
+    stopWatching();
+    stopWatching = null;
+  }
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+  if (engineSocket) {
+    engineSocket.destroy();
+    engineSocket = null;
+  }
 });
 
 // Make the text document manager listen on the connection

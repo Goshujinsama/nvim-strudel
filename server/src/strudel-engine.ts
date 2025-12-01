@@ -6,6 +6,7 @@ import * as tonal from '@strudel/tonal';
 import { transpiler } from '@strudel/transpiler';
 import type { ActiveElement, VisualizationEvent } from './types.js';
 import { initOsc, sendHapToSuperDirt, isOscConnected, closeOsc } from './osc-output.js';
+import { writeEngineState, clearEngineState } from './engine-state.js';
 
 // NOTE: Web Audio API polyfill is initialized in index.ts before this module is imported.
 // This ensures AudioContext is available before superdough checks for it.
@@ -339,6 +340,11 @@ const sampleLoaders: Promise<void>[] = [
 // Wait for all samples to load, but don't fail if some don't load
 await Promise.allSettled(sampleLoaders);
 console.log('[strudel-engine] Sample loading complete!');
+console.log(`[strudel-engine] Available: ${loadedSamples.size} samples, ${sampleBanks.size} banks`);
+
+// Note: State file is written by setPort() after server starts listening
+// It only contains connection info (pid, port), not samples/banks
+// LSP connects via TCP to get samples/banks
 
 
 
@@ -358,6 +364,7 @@ export class StrudelEngine {
   private webAudioEnabled = true; // Enable by default
   private currentCode = ''; // Store current code for offset->line/col conversion
   private lastEvalError: string | null = null; // Track eval errors
+  private serverPort = 0; // Track the server port for state file
 
   constructor() {
     this.initRepl();
@@ -732,6 +739,7 @@ export class StrudelEngine {
   queryVisualization(displayCycles = 2, smooth = true): {
     cycle: number;
     phase: number;
+    playheadPosition: number; // 0-1, where the playhead is in the display window
     tracks: { name: string; events: VisualizationEvent[] }[];
     displayCycles: number;
     noteRange?: { min: number; max: number };
@@ -748,9 +756,27 @@ export class StrudelEngine {
     const phase = currentCycle % 1;
 
     // Query window: 
-    // - smooth=true: window starts at current position (playhead at left)
+    // - smooth=true: playhead starts at left, moves to 1/3, then stays there while pattern scrolls
     // - smooth=false: window starts at cycle boundary (original behavior)
-    const windowStart = smooth ? currentCycle : Math.floor(currentCycle);
+    const playheadLockPosition = 1/3; // Playhead locks at 1/3 of the display width
+    const scrollThreshold = displayCycles * playheadLockPosition;
+    
+    let windowStart: number;
+    let playheadPosition: number; // 0-1 position in display window
+    
+    if (!smooth) {
+      // Original behavior: snap to cycle boundaries
+      windowStart = Math.floor(currentCycle);
+      playheadPosition = phase / displayCycles;
+    } else if (currentCycle < scrollThreshold) {
+      // Early phase: window at 0, playhead moves from left toward 1/3
+      windowStart = 0;
+      playheadPosition = currentCycle / displayCycles;
+    } else {
+      // Scrolling phase: playhead stays at 1/3, pattern scrolls
+      windowStart = currentCycle - scrollThreshold;
+      playheadPosition = playheadLockPosition;
+    }
     const windowEnd = windowStart + displayCycles;
 
     try {
@@ -835,6 +861,7 @@ export class StrudelEngine {
       const result: {
         cycle: number;
         phase: number;
+        playheadPosition: number;
         tracks: { name: string; events: VisualizationEvent[] }[];
         displayCycles: number;
         noteRange?: { min: number; max: number };
@@ -842,6 +869,7 @@ export class StrudelEngine {
       } = {
         cycle: currentCycle,
         phase,
+        playheadPosition,
         tracks,
         displayCycles,
       };
@@ -897,11 +925,26 @@ export class StrudelEngine {
   }
 
   /**
+   * Set the server port and write state file
+   * Called by the TCP server after it starts listening
+   */
+  setPort(port: number): void {
+    this.serverPort = port;
+    // Write state file with connection info only
+    writeEngineState({
+      pid: process.pid,
+      port: this.serverPort,
+    });
+    console.log(`[strudel-engine] State file written (port: ${port})`);
+  }
+
+  /**
    * Cleanup resources
    */
   dispose(): void {
     this.stop();
     this.disableOsc();
+    clearEngineState();
     console.log('[strudel-engine] Disposed');
   }
 }
