@@ -857,19 +857,20 @@ local function on_status(msg)
   local was_playing = state.is_playing
   state.is_playing = msg.playing or false
   
-  -- If enabled and playback state changed, show/hide window
-  if state.enabled then
-    if state.is_playing and not was_playing then
-      -- Started playing - show window
-      vim.schedule(function()
-        show_window()
-      end)
-    elseif not state.is_playing and was_playing then
-      -- Stopped playing - hide window
-      vim.schedule(function()
-        hide_window()
-      end)
-    end
+  -- If enabled and started playing, show window
+  -- We only auto-show on play; hiding is done explicitly via :StrudelPianoroll or stop
+  -- This way pause doesn't hide the window (matching dap-ui behavior)
+  if state.enabled and state.is_playing and not was_playing then
+    vim.schedule(function()
+      show_window()
+    end)
+  end
+  
+  -- Check if stopped (cycle reset to 0 indicates stop, not pause)
+  if state.enabled and not state.is_playing and was_playing and msg.cycle == 0 then
+    vim.schedule(function()
+      hide_window()
+    end)
   end
 end
 
