@@ -4306,11 +4306,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'zip',
-    detail: 'Zip patterns together',
-    documentation: 'Shorthand for zip patterns together.',
+    detail: 'Zip steps together',
+    documentation: 'Zips together the steps of provided patterns. Creates a dense cycle. Use pace() to control playback speed. Experimental.',
     signatures: [{
-      label: 'zip(value)',
-      parameters: [{ label: 'value', documentation: 'Zip patterns together value' }],
+      label: 'zip(...pats)',
+      parameters: [],
     }],
   },
 
@@ -4526,11 +4526,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'arpWith',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Arpeggiate with function',
+    documentation: 'Selects indices in stacked notes using a custom function. Experimental.',
     signatures: [{
-      label: 'arpWith(...)',
-      parameters: [],
+      label: 'arpWith(fn)',
+      parameters: [{ label: 'fn', documentation: 'Function that receives haps array and returns selected hap(s)' }],
     }],
   },
   {
@@ -4643,11 +4643,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'brak',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Breakbeat pattern',
+    documentation: 'Squashes the pattern to fit half a cycle, then plays it off-beat with the other half.',
     signatures: [{
-      label: 'brak(...)',
-      parameters: [],
+      label: 'brak(pat)',
+      parameters: [{ label: 'pat', documentation: 'Pattern to apply breakbeat effect to' }],
     }],
   },
   {
@@ -4688,65 +4688,71 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'channel',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'MIDI channel',
+    documentation: 'Sets the MIDI channel for output (1-16).',
     signatures: [{
-      label: 'channel(...)',
-      parameters: [],
+      label: 'channel(n)',
+      parameters: [{ label: 'n', documentation: 'MIDI channel number (1-16)' }],
     }],
   },
   {
     name: 'chooseIn',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Choose by input index',
+    documentation: 'Chooses from values based on input pattern.',
     signatures: [{
-      label: 'chooseIn(...)',
-      parameters: [],
+      label: 'chooseIn(pat, ...xs)',
+      parameters: [{ label: 'pat', documentation: 'Pattern of indices' }],
     }],
   },
   {
     name: 'chooseInWith',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Choose in with function',
+    documentation: 'Like chooseIn, but uses a custom function.',
     signatures: [{
-      label: 'chooseInWith(...)',
-      parameters: [],
+      label: 'chooseInWith(fn, ...xs)',
+      parameters: [{ label: 'fn', documentation: 'Function to determine selection' }],
     }],
   },
   {
     name: 'chooseOut',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Choose from output',
+    documentation: 'Outputs a randomly chosen value from the list.',
     signatures: [{
-      label: 'chooseOut(...)',
+      label: 'chooseOut(...xs)',
       parameters: [],
     }],
   },
   {
     name: 'chooseWith',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Choose with function',
+    documentation: 'Like choose, but uses a custom function to pick from values.',
     signatures: [{
-      label: 'chooseWith(...)',
-      parameters: [],
+      label: 'chooseWith(fn, ...xs)',
+      parameters: [{ label: 'fn', documentation: 'Function to determine selection' }],
     }],
   },
   {
     name: 'chunkBack',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Chunk backwards',
+    documentation: 'Like chunk, but cycles through the parts in reverse order. Known as chunk\' in TidalCycles.',
     signatures: [{
-      label: 'chunkBack(...)',
-      parameters: [],
+      label: 'chunkBack(n, fn)',
+      parameters: [
+        { label: 'n', documentation: 'Number of parts to divide pattern into' },
+        { label: 'fn', documentation: 'Function to apply to each part' }
+      ],
     }],
   },
   {
     name: 'chunkback',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Chunk backwards',
+    documentation: 'Alias for chunkBack. Like chunk, but cycles through the parts in reverse order.',
     signatures: [{
-      label: 'chunkback(...)',
-      parameters: [],
+      label: 'chunkback(n, fn)',
+      parameters: [
+        { label: 'n', documentation: 'Number of parts to divide pattern into' },
+        { label: 'fn', documentation: 'Function to apply to each part' }
+      ],
     }],
   },
   {
@@ -4769,11 +4775,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'comb',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Comb filter',
+    documentation: 'Applies a comb filter effect.',
     signatures: [{
-      label: 'comb(...)',
-      parameters: [],
+      label: 'comb(freq)',
+      parameters: [{ label: 'freq', documentation: 'Comb filter frequency' }],
     }],
   },
   {
@@ -4787,11 +4793,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'contract',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Contract step size',
+    documentation: 'Contracts the step size of the pattern by the given factor. Experimental stepwise function. See also expand.',
     signatures: [{
-      label: 'contract(...)',
-      parameters: [],
+      label: 'contract(factor)',
+      parameters: [{ label: 'factor', documentation: 'Factor to contract steps by' }],
     }],
   },
   {
@@ -4805,11 +4811,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'ctranspose',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Chromatic transpose',
+    documentation: 'Transposes note chromatically (in semitones).',
     signatures: [{
-      label: 'ctranspose(...)',
-      parameters: [],
+      label: 'ctranspose(semitones)',
+      parameters: [{ label: 'semitones', documentation: 'Number of semitones to transpose' }],
     }],
   },
   {
@@ -4841,20 +4847,23 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'degradeByWith',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Degrade with custom random',
+    documentation: 'Like degradeBy but uses a custom random function.',
     signatures: [{
-      label: 'degradeByWith(...)',
-      parameters: [],
+      label: 'degradeByWith(fn, amount)',
+      parameters: [
+        { label: 'fn', documentation: 'Random function' },
+        { label: 'amount', documentation: 'Probability of removal (0-1)' }
+      ],
     }],
   },
   {
     name: 'degree',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Scale degree',
+    documentation: 'Selects a scale degree from the current scale.',
     signatures: [{
-      label: 'degree(...)',
-      parameters: [],
+      label: 'degree(n)',
+      parameters: [{ label: 'n', documentation: 'Scale degree (1-based)' }],
     }],
   },
   {
@@ -4868,11 +4877,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'dict',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Voicing dictionary',
+    documentation: 'Sets the voicing dictionary to use for chord voicings.',
     signatures: [{
-      label: 'dict(...)',
-      parameters: [],
+      label: 'dict(name)',
+      parameters: [{ label: 'name', documentation: 'Dictionary name (e.g., "lefthand", "ireal")' }],
     }],
   },
   {
@@ -4895,11 +4904,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'drop',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Drop steps',
+    documentation: 'Drops the given number of steps from a pattern. Positive drops from start, negative drops from end. Experimental stepwise function.',
     signatures: [{
-      label: 'drop(...)',
-      parameters: [],
+      label: 'drop(n)',
+      parameters: [{ label: 'n', documentation: 'Number of steps to drop (positive=start, negative=end)' }],
     }],
   },
   {
@@ -4922,29 +4931,37 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'euclidRot',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Euclidean rhythm with rotation',
+    documentation: 'Like euclid, but has an additional parameter for rotating the resulting sequence.',
     signatures: [{
-      label: 'euclidRot(...)',
-      parameters: [],
+      label: 'euclidRot(pulses, steps, rotation)',
+      parameters: [
+        { label: 'pulses', documentation: 'Number of onsets/beats' },
+        { label: 'steps', documentation: 'Number of steps to fill' },
+        { label: 'rotation', documentation: 'Offset in steps' }
+      ],
     }],
   },
   {
     name: 'euclidrot',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Euclidean rhythm with rotation',
+    documentation: 'Alias for euclidRot. Like euclid with rotation.',
     signatures: [{
-      label: 'euclidrot(...)',
-      parameters: [],
+      label: 'euclidrot(pulses, steps, rotation)',
+      parameters: [
+        { label: 'pulses', documentation: 'Number of onsets/beats' },
+        { label: 'steps', documentation: 'Number of steps to fill' },
+        { label: 'rotation', documentation: 'Offset in steps' }
+      ],
     }],
   },
   {
     name: 'expand',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Expand step size',
+    documentation: 'Expands the step size of the pattern by the given factor. Experimental stepwise function.',
     signatures: [{
-      label: 'expand(...)',
-      parameters: [],
+      label: 'expand(factor)',
+      parameters: [{ label: 'factor', documentation: 'Factor to expand steps by' }],
     }],
   },
   {
@@ -4958,11 +4975,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'extend',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Extend pattern',
+    documentation: 'Like fast but also increases step count accordingly. Stepwise alternative to fast.',
     signatures: [{
-      label: 'extend(...)',
-      parameters: [],
+      label: 'extend(factor)',
+      parameters: [{ label: 'factor', documentation: 'Factor to extend by' }],
     }],
   },
   {
@@ -5075,11 +5092,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'freqToMidi',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Frequency to MIDI',
+    documentation: 'Converts a frequency in Hz to a MIDI note number.',
     signatures: [{
-      label: 'freqToMidi(...)',
-      parameters: [],
+      label: 'freqToMidi(freq)',
+      parameters: [{ label: 'freq', documentation: 'Frequency in Hz' }],
     }],
   },
   {
@@ -5102,11 +5119,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'grow',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Grow pattern progressively',
+    documentation: 'Progressively grows the pattern by n steps until the full pattern is played. Positive grows from start, negative from end. Experimental.',
     signatures: [{
-      label: 'grow(...)',
-      parameters: [],
+      label: 'grow(n)',
+      parameters: [{ label: 'n', documentation: 'Number of steps to grow by each cycle' }],
     }],
   },
   {
@@ -5147,10 +5164,10 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'hours',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Hours signal',
+    documentation: 'Returns the current time in hours.',
     signatures: [{
-      label: 'hours(...)',
+      label: 'hours',
       parameters: [],
     }],
   },
@@ -5282,20 +5299,20 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'midi2note',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'MIDI to note name',
+    documentation: 'Converts a MIDI note number to a note name (e.g., 60 -> "C4").',
     signatures: [{
-      label: 'midi2note(...)',
-      parameters: [],
+      label: 'midi2note(midi)',
+      parameters: [{ label: 'midi', documentation: 'MIDI note number (0-127)' }],
     }],
   },
   {
     name: 'midiToFreq',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'MIDI to frequency',
+    documentation: 'Converts a MIDI note number to frequency in Hz.',
     signatures: [{
-      label: 'midiToFreq(...)',
-      parameters: [],
+      label: 'midiToFreq(midi)',
+      parameters: [{ label: 'midi', documentation: 'MIDI note number' }],
     }],
   },
   {
@@ -5309,11 +5326,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'mini',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Parse mini-notation',
+    documentation: 'Parses a mini-notation string and returns a pattern.',
     signatures: [{
-      label: 'mini(...)',
-      parameters: [],
+      label: 'mini(str)',
+      parameters: [{ label: 'str', documentation: 'Mini-notation string' }],
     }],
   },
   {
@@ -5345,29 +5362,29 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'minutes',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Minutes signal',
+    documentation: 'Returns the current time in minutes.',
     signatures: [{
-      label: 'minutes(...)',
+      label: 'minutes',
       parameters: [],
     }],
   },
   {
     name: 'mtranspose',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Modal transpose',
+    documentation: 'Transposes note within the current scale by scale degrees.',
     signatures: [{
-      label: 'mtranspose(...)',
-      parameters: [],
+      label: 'mtranspose(degrees)',
+      parameters: [{ label: 'degrees', documentation: 'Number of scale degrees to transpose' }],
     }],
   },
   {
     name: 'noteToMidi',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Note name to MIDI',
+    documentation: 'Converts a note name to a MIDI note number (e.g., "C4" -> 60).',
     signatures: [{
-      label: 'noteToMidi(...)',
-      parameters: [],
+      label: 'noteToMidi(note)',
+      parameters: [{ label: 'note', documentation: 'Note name (e.g., "C4", "A#3")' }],
     }],
   },
   {
@@ -5453,11 +5470,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'pace',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Set steps per cycle',
+    documentation: 'Speeds a pattern up or down to fit the given number of steps per cycle. Experimental stepwise function.',
     signatures: [{
-      label: 'pace(...)',
-      parameters: [],
+      label: 'pace(stepsPerCycle)',
+      parameters: [{ label: 'stepsPerCycle', documentation: 'Number of steps per cycle' }],
     }],
   },
   {
@@ -5543,11 +5560,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'perlinWith',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Perlin with seed',
+    documentation: 'Generates Perlin noise with a custom seed function.',
     signatures: [{
-      label: 'perlinWith(...)',
-      parameters: [],
+      label: 'perlinWith(fn)',
+      parameters: [{ label: 'fn', documentation: 'Seed function' }],
     }],
   },
   {
@@ -5561,47 +5578,63 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'pick',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Pick patterns by index/name',
+    documentation: 'Picks patterns from a list (by index) or lookup table (by name). Maintains structure of original patterns.',
     signatures: [{
-      label: 'pick(...)',
-      parameters: [],
+      label: 'pick(pat, xs)',
+      parameters: [
+        { label: 'pat', documentation: 'Pattern of indices or names' },
+        { label: 'xs', documentation: 'Array or object of patterns to pick from' }
+      ],
     }],
   },
   {
     name: 'pickReset',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Pick with reset',
+    documentation: 'Like pick, but resets the chosen pattern when its index is triggered.',
     signatures: [{
-      label: 'pickReset(...)',
-      parameters: [],
+      label: 'pickReset(pat, xs)',
+      parameters: [
+        { label: 'pat', documentation: 'Pattern of indices' },
+        { label: 'xs', documentation: 'Array or object of patterns to pick from' }
+      ],
     }],
   },
   {
     name: 'pickSqueeze',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Alias for inhabit',
+    documentation: 'Alias for inhabit. Picks patterns and squeezes cycles into the target pattern.',
     signatures: [{
-      label: 'pickSqueeze(...)',
-      parameters: [],
+      label: 'pickSqueeze(pat, xs)',
+      parameters: [
+        { label: 'pat', documentation: 'Pattern of indices or names' },
+        { label: 'xs', documentation: 'Array or object of patterns to pick from' }
+      ],
     }],
   },
   {
     name: 'pickmod',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Pick with wrapping',
+    documentation: 'Like pick, but wraps around if index exceeds list size.',
     signatures: [{
-      label: 'pickmod(...)',
-      parameters: [],
+      label: 'pickmod(pat, xs)',
+      parameters: [
+        { label: 'pat', documentation: 'Pattern of indices' },
+        { label: 'xs', documentation: 'Array of patterns to pick from' }
+      ],
     }],
   },
   {
     name: 'pickmodF',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Pick functions with wrapping',
+    documentation: 'Like pickF, but wraps around if index exceeds list size.',
     signatures: [{
-      label: 'pickmodF(...)',
-      parameters: [],
+      label: 'pickmodF(pat, lookup, fns)',
+      parameters: [
+        { label: 'pat', documentation: 'Pattern to transform' },
+        { label: 'lookup', documentation: 'Pattern of indices' },
+        { label: 'fns', documentation: 'Array of functions to pick from' }
+      ],
     }],
   },
   {
@@ -5615,29 +5648,38 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'pickmodReset',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Pick with wrapping and reset',
+    documentation: 'Like pickReset, but wraps around if index exceeds list size.',
     signatures: [{
-      label: 'pickmodReset(...)',
-      parameters: [],
+      label: 'pickmodReset(pat, xs)',
+      parameters: [
+        { label: 'pat', documentation: 'Pattern of indices' },
+        { label: 'xs', documentation: 'Array of patterns to pick from' }
+      ],
     }],
   },
   {
     name: 'pickmodRestart',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Pick with wrapping and restart',
+    documentation: 'Like pickRestart, but wraps around if index exceeds list size.',
     signatures: [{
-      label: 'pickmodRestart(...)',
-      parameters: [],
+      label: 'pickmodRestart(pat, xs)',
+      parameters: [
+        { label: 'pat', documentation: 'Pattern of indices' },
+        { label: 'xs', documentation: 'Array of patterns to pick from' }
+      ],
     }],
   },
   {
     name: 'pickmodSqueeze',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Alias for inhabitmod',
+    documentation: 'Alias for inhabitmod. Like inhabit with wrapping.',
     signatures: [{
-      label: 'pickmodSqueeze(...)',
-      parameters: [],
+      label: 'pickmodSqueeze(pat, xs)',
+      parameters: [
+        { label: 'pat', documentation: 'Pattern of indices' },
+        { label: 'xs', documentation: 'Array of patterns to pick from' }
+      ],
     }],
   },
   {
@@ -5669,10 +5711,10 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'polyrhythm',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Alias for stack',
+    documentation: 'Alias for stack. Plays items at the same time at the same length.',
     signatures: [{
-      label: 'polyrhythm(...)',
+      label: 'polyrhythm(...items)',
       parameters: [],
     }],
   },
@@ -5777,11 +5819,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'rotate',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Rotate pattern',
+    documentation: 'Rotates the pattern by a given number of steps.',
     signatures: [{
-      label: 'rotate(...)',
-      parameters: [],
+      label: 'rotate(n)',
+      parameters: [{ label: 'n', documentation: 'Number of steps to rotate' }],
     }],
   },
   {
@@ -5813,10 +5855,10 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'seconds',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Seconds signal',
+    documentation: 'Returns the current time in seconds.',
     signatures: [{
-      label: 'seconds(...)',
+      label: 'seconds',
       parameters: [],
     }],
   },
@@ -5840,10 +5882,10 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'sequence',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Alias for seq',
+    documentation: 'Alias for seq/fastcat. Crams items into one cycle.',
     signatures: [{
-      label: 'sequence(...)',
+      label: 'sequence(...items)',
       parameters: [],
     }],
   },
@@ -5858,11 +5900,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'shrink',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Shrink pattern progressively',
+    documentation: 'Progressively shrinks the pattern by n steps until nothing left. Positive shrinks from start, negative from end. Experimental.',
     signatures: [{
-      label: 'shrink(...)',
-      parameters: [],
+      label: 'shrink(n)',
+      parameters: [{ label: 'n', documentation: 'Number of steps to shrink by each cycle' }],
     }],
   },
   {
@@ -5876,11 +5918,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'signal',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Create continuous signal',
+    documentation: 'Creates a continuous signal pattern from a function of time.',
     signatures: [{
-      label: 'signal(...)',
-      parameters: [],
+      label: 'signal(fn)',
+      parameters: [{ label: 'fn', documentation: 'Function of time returning value' }],
     }],
   },
   {
@@ -5894,11 +5936,14 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'slowChunk',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Slow chunk',
+    documentation: 'Divides pattern into n parts, cycles through applying function to each part (one per cycle).',
     signatures: [{
-      label: 'slowChunk(...)',
-      parameters: [],
+      label: 'slowChunk(n, fn)',
+      parameters: [
+        { label: 'n', documentation: 'Number of parts' },
+        { label: 'fn', documentation: 'Function to apply' }
+      ],
     }],
   },
   {
@@ -5912,11 +5957,14 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'slowchunk',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Alias for slowChunk',
+    documentation: 'Alias for slowChunk/chunk. Divides pattern into n parts, applies function to each.',
     signatures: [{
-      label: 'slowchunk(...)',
-      parameters: [],
+      label: 'slowchunk(n, fn)',
+      parameters: [
+        { label: 'n', documentation: 'Number of parts' },
+        { label: 'fn', documentation: 'Function to apply' }
+      ],
     }],
   },
   {
@@ -5948,11 +5996,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'sparsity',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Alias for slow',
+    documentation: 'Alias for slow. Slows down a pattern over the given number of cycles.',
     signatures: [{
-      label: 'sparsity(...)',
-      parameters: [],
+      label: 'sparsity(factor)',
+      parameters: [{ label: 'factor', documentation: 'Slow down factor' }],
     }],
   },
   {
@@ -5966,11 +6014,14 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'splice',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Splice sample',
+    documentation: 'Cuts a sample into slices and plays them according to the pattern.',
     signatures: [{
-      label: 'splice(...)',
-      parameters: [],
+      label: 'splice(n, pat)',
+      parameters: [
+        { label: 'n', documentation: 'Number of slices' },
+        { label: 'pat', documentation: 'Pattern of slice indices' }
+      ],
     }],
   },
   {
@@ -5984,11 +6035,14 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'squeeze',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Squeeze patterns by index',
+    documentation: 'Picks from a list of values/patterns via index. Selected pattern is compressed to fit the selecting event duration.',
     signatures: [{
-      label: 'squeeze(...)',
-      parameters: [],
+      label: 'squeeze(pat, xs)',
+      parameters: [
+        { label: 'pat', documentation: 'Pattern of indices' },
+        { label: 'xs', documentation: 'Array of patterns to pick from' }
+      ],
     }],
   },
   {
@@ -6038,20 +6092,20 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'stepalt',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Stepwise alternate',
+    documentation: 'Concatenates patterns stepwise. If an argument is a list, alternates between elements. Experimental.',
     signatures: [{
-      label: 'stepalt(...)',
+      label: 'stepalt(...pats)',
       parameters: [],
     }],
   },
   {
     name: 'steps',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Alias for pace',
+    documentation: 'Alias for pace. Sets the number of steps per cycle. Experimental.',
     signatures: [{
-      label: 'steps(...)',
-      parameters: [],
+      label: 'steps(n)',
+      parameters: [{ label: 'n', documentation: 'Steps per cycle' }],
     }],
   },
   {
@@ -6083,20 +6137,28 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'stutWith',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Echo with function',
+    documentation: 'Superimpose and offset multiple times, applying a function each iteration. Alias: echoWith.',
     signatures: [{
-      label: 'stutWith(...)',
-      parameters: [],
+      label: 'stutWith(times, time, fn)',
+      parameters: [
+        { label: 'times', documentation: 'Number of repetitions' },
+        { label: 'time', documentation: 'Cycle offset between iterations' },
+        { label: 'fn', documentation: 'Function to apply (receives pattern and index)' }
+      ],
     }],
   },
   {
     name: 'stutwith',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Echo with function',
+    documentation: 'Alias for stutWith/echoWith. Superimpose and offset with function applied each iteration.',
     signatures: [{
-      label: 'stutwith(...)',
-      parameters: [],
+      label: 'stutwith(times, time, fn)',
+      parameters: [
+        { label: 'times', documentation: 'Number of repetitions' },
+        { label: 'time', documentation: 'Cycle offset between iterations' },
+        { label: 'fn', documentation: 'Function to apply' }
+      ],
     }],
   },
   {
@@ -6110,28 +6172,28 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'take',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Take steps',
+    documentation: 'Takes the given number of steps from a pattern. Positive takes from start, negative from end. Experimental stepwise function.',
     signatures: [{
-      label: 'take(...)',
-      parameters: [],
+      label: 'take(n)',
+      parameters: [{ label: 'n', documentation: 'Number of steps to take (positive=start, negative=end)' }],
     }],
   },
   {
     name: 'timeCat',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Alias for stepcat',
+    documentation: 'Alias for stepcat. Concatenates patterns proportionally to step count.',
     signatures: [{
-      label: 'timeCat(...)',
+      label: 'timeCat(...pats)',
       parameters: [],
     }],
   },
   {
     name: 'timecat',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Alias for stepcat',
+    documentation: 'Alias for stepcat. Concatenates patterns proportionally to step count.',
     signatures: [{
-      label: 'timecat(...)',
+      label: 'timecat(...pats)',
       parameters: [],
     }],
   },
@@ -6155,10 +6217,10 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'tour',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Tour through patterns',
+    documentation: 'Inserts a pattern into a list, moving backwards through the list on successive repetitions. Experimental stepwise function.',
     signatures: [{
-      label: 'tour(...)',
+      label: 'tour(pat, ...pats)',
       parameters: [],
     }],
   },
@@ -6335,10 +6397,10 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'wchooseCycles',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Weighted choose per cycle',
+    documentation: 'Picks one element at random each cycle with probability weights. Alias: wrandcat.',
     signatures: [{
-      label: 'wchooseCycles(...)',
+      label: 'wchooseCycles(...pairs)',
       parameters: [],
     }],
   },
@@ -6353,10 +6415,10 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'wrandcat',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Alias for wchooseCycles',
+    documentation: 'Alias for wchooseCycles. Picks one element at random each cycle with probability weights.',
     signatures: [{
-      label: 'wrandcat(...)',
+      label: 'wrandcat(...pairs)',
       parameters: [],
     }],
   },
@@ -6425,11 +6487,11 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
   },
   {
     name: 'zipWith',
-    detail: 'Strudel function',
-    documentation: 'Strudel function. See strudel.cc for documentation.',
+    detail: 'Zip with function',
+    documentation: 'Zips patterns together applying a combining function to each pair of values.',
     signatures: [{
-      label: 'zipWith(...)',
-      parameters: [],
+      label: 'zipWith(fn, ...pats)',
+      parameters: [{ label: 'fn', documentation: 'Function to combine values' }],
     }],
   },
   {
