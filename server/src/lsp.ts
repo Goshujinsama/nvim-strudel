@@ -3608,6 +3608,2885 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
     }],
   },
 
+  // === ALIASES (lowercase versions) ===
+  {
+    name: 'chunkbackinto',
+    detail: 'Alias for chunkBackInto',
+    documentation: 'Lowercase alias for chunkBackInto. See chunkBackInto for full documentation.',
+    signatures: [{
+      label: 'chunkbackinto(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'chunkinto',
+    detail: 'Alias for chunkInto',
+    documentation: 'Lowercase alias for chunkInto. See chunkInto for full documentation.',
+    signatures: [{
+      label: 'chunkinto(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'echowith',
+    detail: 'Alias for echoWith',
+    documentation: 'Lowercase alias for echoWith. See echoWith for full documentation.',
+    signatures: [{
+      label: 'echowith(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'fastchunk',
+    detail: 'Alias for fastChunk',
+    documentation: 'Lowercase alias for fastChunk. See fastChunk for full documentation.',
+    signatures: [{
+      label: 'fastchunk(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'fastgap',
+    detail: 'Alias for fastGap',
+    documentation: 'Lowercase alias for fastGap. See fastGap for full documentation.',
+    signatures: [{
+      label: 'fastgap(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'iterback',
+    detail: 'Alias for iterBack',
+    documentation: 'Lowercase alias for iterBack. See iterBack for full documentation.',
+    signatures: [{
+      label: 'iterback(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'juxby',
+    detail: 'Alias for juxBy',
+    documentation: 'Lowercase alias for juxBy. See juxBy for full documentation.',
+    signatures: [{
+      label: 'juxby(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'loopat',
+    detail: 'Alias for loopAt',
+    documentation: 'Lowercase alias for loopAt. See loopAt for full documentation.',
+    signatures: [{
+      label: 'loopat(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'loopatcps',
+    detail: 'Alias for loopAtCps',
+    documentation: 'Lowercase alias for loopAtCps. See loopAtCps for full documentation.',
+    signatures: [{
+      label: 'loopatcps(...)',
+      parameters: [],
+    }],
+  },
+
+  // === SHORT PARAMETER NAMES ===
+  {
+    name: 'and',
+    detail: 'Bitwise AND',
+    documentation: 'Shorthand for bitwise AND.',
+    signatures: [{
+      label: 'and(value)',
+      parameters: [{ label: 'value', documentation: 'Bitwise AND value' }],
+    }],
+  },
+  {
+    name: 'att',
+    detail: 'Attack',
+    documentation: 'Shorthand for attack.',
+    signatures: [{
+      label: 'att(value)',
+      parameters: [{ label: 'value', documentation: 'Attack value' }],
+    }],
+  },
+  {
+    name: 'bor',
+    detail: 'Bitwise OR',
+    documentation: 'Shorthand for bitwise OR.',
+    signatures: [{
+      label: 'bor(value)',
+      parameters: [{ label: 'value', documentation: 'Bitwise OR value' }],
+    }],
+  },
+  {
+    name: 'bp',
+    detail: 'Bandpass filter',
+    documentation: 'Shorthand for bandpass filter.',
+    signatures: [{
+      label: 'bp(value)',
+      parameters: [{ label: 'value', documentation: 'Bandpass filter value' }],
+    }],
+  },
+  {
+    name: 'bpa',
+    detail: 'Bandpass attack',
+    documentation: 'Shorthand for bandpass attack.',
+    signatures: [{
+      label: 'bpa(value)',
+      parameters: [{ label: 'value', documentation: 'Bandpass attack value' }],
+    }],
+  },
+  {
+    name: 'bpd',
+    detail: 'Bandpass decay',
+    documentation: 'Shorthand for bandpass decay.',
+    signatures: [{
+      label: 'bpd(value)',
+      parameters: [{ label: 'value', documentation: 'Bandpass decay value' }],
+    }],
+  },
+  {
+    name: 'bpe',
+    detail: 'Bandpass env',
+    documentation: 'Shorthand for bandpass env.',
+    signatures: [{
+      label: 'bpe(value)',
+      parameters: [{ label: 'value', documentation: 'Bandpass env value' }],
+    }],
+  },
+  {
+    name: 'bpr',
+    detail: 'Bandpass release',
+    documentation: 'Shorthand for bandpass release.',
+    signatures: [{
+      label: 'bpr(value)',
+      parameters: [{ label: 'value', documentation: 'Bandpass release value' }],
+    }],
+  },
+  {
+    name: 'bps',
+    detail: 'Bandpass sustain',
+    documentation: 'Shorthand for bandpass sustain.',
+    signatures: [{
+      label: 'bps(value)',
+      parameters: [{ label: 'value', documentation: 'Bandpass sustain value' }],
+    }],
+  },
+  {
+    name: 'ch',
+    detail: 'Channel',
+    documentation: 'Shorthand for channel.',
+    signatures: [{
+      label: 'ch(value)',
+      parameters: [{ label: 'value', documentation: 'Channel value' }],
+    }],
+  },
+  {
+    name: 'ctf',
+    detail: 'Cutoff frequency',
+    documentation: 'Shorthand for cutoff frequency.',
+    signatures: [{
+      label: 'ctf(value)',
+      parameters: [{ label: 'value', documentation: 'Cutoff frequency value' }],
+    }],
+  },
+  {
+    name: 'dec',
+    detail: 'Decay',
+    documentation: 'Shorthand for decay.',
+    signatures: [{
+      label: 'dec(value)',
+      parameters: [{ label: 'value', documentation: 'Decay value' }],
+    }],
+  },
+  {
+    name: 'det',
+    detail: 'Detune',
+    documentation: 'Shorthand for detune.',
+    signatures: [{
+      label: 'det(value)',
+      parameters: [{ label: 'value', documentation: 'Detune value' }],
+    }],
+  },
+  {
+    name: 'dfb',
+    detail: 'Delay feedback',
+    documentation: 'Shorthand for delay feedback.',
+    signatures: [{
+      label: 'dfb(value)',
+      parameters: [{ label: 'value', documentation: 'Delay feedback value' }],
+    }],
+  },
+  {
+    name: 'djf',
+    detail: 'DJ filter',
+    documentation: 'Shorthand for DJ filter.',
+    signatures: [{
+      label: 'djf(value)',
+      parameters: [{ label: 'value', documentation: 'DJ filter value' }],
+    }],
+  },
+  {
+    name: 'ds',
+    detail: 'Delay send',
+    documentation: 'Shorthand for delay send.',
+    signatures: [{
+      label: 'ds(value)',
+      parameters: [{ label: 'value', documentation: 'Delay send value' }],
+    }],
+  },
+  {
+    name: 'dt',
+    detail: 'Delay time',
+    documentation: 'Shorthand for delay time.',
+    signatures: [{
+      label: 'dt(value)',
+      parameters: [{ label: 'value', documentation: 'Delay time value' }],
+    }],
+  },
+  {
+    name: 'e',
+    detail: 'Euclidean pattern',
+    documentation: 'Shorthand for euclidean pattern.',
+    signatures: [{
+      label: 'e(value)',
+      parameters: [{ label: 'value', documentation: 'Euclidean pattern value' }],
+    }],
+  },
+  {
+    name: 'eq',
+    detail: 'Equalizer',
+    documentation: 'Shorthand for equalizer.',
+    signatures: [{
+      label: 'eq(value)',
+      parameters: [{ label: 'value', documentation: 'Equalizer value' }],
+    }],
+  },
+  {
+    name: 'eqt',
+    detail: 'EQ type',
+    documentation: 'Shorthand for EQ type.',
+    signatures: [{
+      label: 'eqt(value)',
+      parameters: [{ label: 'value', documentation: 'EQ type value' }],
+    }],
+  },
+  {
+    name: 'fft',
+    detail: 'FFT analysis',
+    documentation: 'Shorthand for FFT analysis.',
+    signatures: [{
+      label: 'fft(value)',
+      parameters: [{ label: 'value', documentation: 'FFT analysis value' }],
+    }],
+  },
+  {
+    name: 'gap',
+    detail: 'Gap/rest',
+    documentation: 'Shorthand for gap/rest.',
+    signatures: [{
+      label: 'gap(value)',
+      parameters: [{ label: 'value', documentation: 'Gap/rest value' }],
+    }],
+  },
+  {
+    name: 'gat',
+    detail: 'Gate',
+    documentation: 'Shorthand for gate.',
+    signatures: [{
+      label: 'gat(value)',
+      parameters: [{ label: 'value', documentation: 'Gate value' }],
+    }],
+  },
+  {
+    name: 'gt',
+    detail: 'Greater than',
+    documentation: 'Shorthand for greater than.',
+    signatures: [{
+      label: 'gt(value)',
+      parameters: [{ label: 'value', documentation: 'Greater than value' }],
+    }],
+  },
+  {
+    name: 'gte',
+    detail: 'Greater than or equal',
+    documentation: 'Shorthand for greater than or equal.',
+    signatures: [{
+      label: 'gte(value)',
+      parameters: [{ label: 'value', documentation: 'Greater than or equal value' }],
+    }],
+  },
+  {
+    name: 'h',
+    detail: 'Harmonic',
+    documentation: 'Shorthand for harmonic.',
+    signatures: [{
+      label: 'h(value)',
+      parameters: [{ label: 'value', documentation: 'Harmonic value' }],
+    }],
+  },
+  {
+    name: 'hp',
+    detail: 'Highpass filter',
+    documentation: 'Shorthand for highpass filter.',
+    signatures: [{
+      label: 'hp(value)',
+      parameters: [{ label: 'value', documentation: 'Highpass filter value' }],
+    }],
+  },
+  {
+    name: 'hpa',
+    detail: 'Highpass attack',
+    documentation: 'Shorthand for highpass attack.',
+    signatures: [{
+      label: 'hpa(value)',
+      parameters: [{ label: 'value', documentation: 'Highpass attack value' }],
+    }],
+  },
+  {
+    name: 'hpd',
+    detail: 'Highpass decay',
+    documentation: 'Shorthand for highpass decay.',
+    signatures: [{
+      label: 'hpd(value)',
+      parameters: [{ label: 'value', documentation: 'Highpass decay value' }],
+    }],
+  },
+  {
+    name: 'hpe',
+    detail: 'Highpass env',
+    documentation: 'Shorthand for highpass env.',
+    signatures: [{
+      label: 'hpe(value)',
+      parameters: [{ label: 'value', documentation: 'Highpass env value' }],
+    }],
+  },
+  {
+    name: 'hpr',
+    detail: 'Highpass release',
+    documentation: 'Shorthand for highpass release.',
+    signatures: [{
+      label: 'hpr(value)',
+      parameters: [{ label: 'value', documentation: 'Highpass release value' }],
+    }],
+  },
+  {
+    name: 'hps',
+    detail: 'Highpass sustain',
+    documentation: 'Shorthand for highpass sustain.',
+    signatures: [{
+      label: 'hps(value)',
+      parameters: [{ label: 'value', documentation: 'Highpass sustain value' }],
+    }],
+  },
+  {
+    name: 'hsl',
+    detail: 'HSL color',
+    documentation: 'Shorthand for HSL color.',
+    signatures: [{
+      label: 'hsl(value)',
+      parameters: [{ label: 'value', documentation: 'HSL color value' }],
+    }],
+  },
+  {
+    name: 'id',
+    detail: 'Identity',
+    documentation: 'Shorthand for identity.',
+    signatures: [{
+      label: 'id(value)',
+      parameters: [{ label: 'value', documentation: 'Identity value' }],
+    }],
+  },
+  {
+    name: 'inv',
+    detail: 'Invert',
+    documentation: 'Shorthand for invert.',
+    signatures: [{
+      label: 'inv(value)',
+      parameters: [{ label: 'value', documentation: 'Invert value' }],
+    }],
+  },
+  {
+    name: 'ir',
+    detail: 'Impulse response',
+    documentation: 'Shorthand for impulse response.',
+    signatures: [{
+      label: 'ir(value)',
+      parameters: [{ label: 'value', documentation: 'Impulse response value' }],
+    }],
+  },
+  {
+    name: 'lfo',
+    detail: 'Low frequency oscillator',
+    documentation: 'Shorthand for low frequency oscillator.',
+    signatures: [{
+      label: 'lfo(value)',
+      parameters: [{ label: 'value', documentation: 'Low frequency oscillator value' }],
+    }],
+  },
+  {
+    name: 'lp',
+    detail: 'Lowpass filter',
+    documentation: 'Shorthand for lowpass filter.',
+    signatures: [{
+      label: 'lp(value)',
+      parameters: [{ label: 'value', documentation: 'Lowpass filter value' }],
+    }],
+  },
+  {
+    name: 'lpa',
+    detail: 'Lowpass attack',
+    documentation: 'Shorthand for lowpass attack.',
+    signatures: [{
+      label: 'lpa(value)',
+      parameters: [{ label: 'value', documentation: 'Lowpass attack value' }],
+    }],
+  },
+  {
+    name: 'lpd',
+    detail: 'Lowpass decay',
+    documentation: 'Shorthand for lowpass decay.',
+    signatures: [{
+      label: 'lpd(value)',
+      parameters: [{ label: 'value', documentation: 'Lowpass decay value' }],
+    }],
+  },
+  {
+    name: 'lpe',
+    detail: 'Lowpass env',
+    documentation: 'Shorthand for lowpass env.',
+    signatures: [{
+      label: 'lpe(value)',
+      parameters: [{ label: 'value', documentation: 'Lowpass env value' }],
+    }],
+  },
+  {
+    name: 'lpr',
+    detail: 'Lowpass release',
+    documentation: 'Shorthand for lowpass release.',
+    signatures: [{
+      label: 'lpr(value)',
+      parameters: [{ label: 'value', documentation: 'Lowpass release value' }],
+    }],
+  },
+  {
+    name: 'lps',
+    detail: 'Lowpass sustain',
+    documentation: 'Shorthand for lowpass sustain.',
+    signatures: [{
+      label: 'lps(value)',
+      parameters: [{ label: 'value', documentation: 'Lowpass sustain value' }],
+    }],
+  },
+  {
+    name: 'lt',
+    detail: 'Less than',
+    documentation: 'Shorthand for less than.',
+    signatures: [{
+      label: 'lt(value)',
+      parameters: [{ label: 'value', documentation: 'Less than value' }],
+    }],
+  },
+  {
+    name: 'lte',
+    detail: 'Less than or equal',
+    documentation: 'Shorthand for less than or equal.',
+    signatures: [{
+      label: 'lte(value)',
+      parameters: [{ label: 'value', documentation: 'Less than or equal value' }],
+    }],
+  },
+  {
+    name: 'm',
+    detail: 'Mode/midi',
+    documentation: 'Shorthand for mode/midi.',
+    signatures: [{
+      label: 'm(value)',
+      parameters: [{ label: 'value', documentation: 'Mode/midi value' }],
+    }],
+  },
+  {
+    name: 'mod',
+    detail: 'Modulation',
+    documentation: 'Shorthand for modulation.',
+    signatures: [{
+      label: 'mod(value)',
+      parameters: [{ label: 'value', documentation: 'Modulation value' }],
+    }],
+  },
+  {
+    name: 'ne',
+    detail: 'Not equal',
+    documentation: 'Shorthand for not equal.',
+    signatures: [{
+      label: 'ne(value)',
+      parameters: [{ label: 'value', documentation: 'Not equal value' }],
+    }],
+  },
+  {
+    name: 'net',
+    detail: 'Network',
+    documentation: 'Shorthand for network.',
+    signatures: [{
+      label: 'net(value)',
+      parameters: [{ label: 'value', documentation: 'Network value' }],
+    }],
+  },
+  {
+    name: 'or',
+    detail: 'Bitwise OR',
+    documentation: 'Shorthand for bitwise OR.',
+    signatures: [{
+      label: 'or(value)',
+      parameters: [{ label: 'value', documentation: 'Bitwise OR value' }],
+    }],
+  },
+  {
+    name: 'ph',
+    detail: 'Phase',
+    documentation: 'Shorthand for phase.',
+    signatures: [{
+      label: 'ph(value)',
+      parameters: [{ label: 'value', documentation: 'Phase value' }],
+    }],
+  },
+  {
+    name: 'phc',
+    detail: 'Phaser center',
+    documentation: 'Shorthand for phaser center.',
+    signatures: [{
+      label: 'phc(value)',
+      parameters: [{ label: 'value', documentation: 'Phaser center value' }],
+    }],
+  },
+  {
+    name: 'phd',
+    detail: 'Phaser depth',
+    documentation: 'Shorthand for phaser depth.',
+    signatures: [{
+      label: 'phd(value)',
+      parameters: [{ label: 'value', documentation: 'Phaser depth value' }],
+    }],
+  },
+  {
+    name: 'phs',
+    detail: 'Phaser sweep',
+    documentation: 'Shorthand for phaser sweep.',
+    signatures: [{
+      label: 'phs(value)',
+      parameters: [{ label: 'value', documentation: 'Phaser sweep value' }],
+    }],
+  },
+  {
+    name: 'pm',
+    detail: 'Phase modulation',
+    documentation: 'Shorthand for phase modulation.',
+    signatures: [{
+      label: 'pm(value)',
+      parameters: [{ label: 'value', documentation: 'Phase modulation value' }],
+    }],
+  },
+  {
+    name: 'pow',
+    detail: 'Power',
+    documentation: 'Shorthand for power.',
+    signatures: [{
+      label: 'pow(value)',
+      parameters: [{ label: 'value', documentation: 'Power value' }],
+    }],
+  },
+  {
+    name: 'pr',
+    detail: 'Pattern reference',
+    documentation: 'Shorthand for pattern reference.',
+    signatures: [{
+      label: 'pr(value)',
+      parameters: [{ label: 'value', documentation: 'Pattern reference value' }],
+    }],
+  },
+  {
+    name: 'ref',
+    detail: 'Reference',
+    documentation: 'Shorthand for reference.',
+    signatures: [{
+      label: 'ref(value)',
+      parameters: [{ label: 'value', documentation: 'Reference value' }],
+    }],
+  },
+  {
+    name: 'rel',
+    detail: 'Release',
+    documentation: 'Shorthand for release.',
+    signatures: [{
+      label: 'rel(value)',
+      parameters: [{ label: 'value', documentation: 'Release value' }],
+    }],
+  },
+  {
+    name: 'rib',
+    detail: 'Ribbon controller',
+    documentation: 'Shorthand for ribbon controller.',
+    signatures: [{
+      label: 'rib(value)',
+      parameters: [{ label: 'value', documentation: 'Ribbon controller value' }],
+    }],
+  },
+  {
+    name: 'rlp',
+    detail: 'Resonant lowpass',
+    documentation: 'Shorthand for resonant lowpass.',
+    signatures: [{
+      label: 'rlp(value)',
+      parameters: [{ label: 'value', documentation: 'Resonant lowpass value' }],
+    }],
+  },
+  {
+    name: 'seg',
+    detail: 'Segment',
+    documentation: 'Shorthand for segment.',
+    signatures: [{
+      label: 'seg(value)',
+      parameters: [{ label: 'value', documentation: 'Segment value' }],
+    }],
+  },
+  {
+    name: 'src',
+    detail: 'Source',
+    documentation: 'Shorthand for source.',
+    signatures: [{
+      label: 'src(value)',
+      parameters: [{ label: 'value', documentation: 'Source value' }],
+    }],
+  },
+  {
+    name: 'sus',
+    detail: 'Sustain',
+    documentation: 'Shorthand for sustain.',
+    signatures: [{
+      label: 'sus(value)',
+      parameters: [{ label: 'value', documentation: 'Sustain value' }],
+    }],
+  },
+  {
+    name: 'sz',
+    detail: 'Size',
+    documentation: 'Shorthand for size.',
+    signatures: [{
+      label: 'sz(value)',
+      parameters: [{ label: 'value', documentation: 'Size value' }],
+    }],
+  },
+  {
+    name: 'uid',
+    detail: 'Unique id',
+    documentation: 'Shorthand for unique id.',
+    signatures: [{
+      label: 'uid(value)',
+      parameters: [{ label: 'value', documentation: 'Unique id value' }],
+    }],
+  },
+  {
+    name: 'v',
+    detail: 'Velocity/value',
+    documentation: 'Shorthand for velocity/value.',
+    signatures: [{
+      label: 'v(value)',
+      parameters: [{ label: 'value', documentation: 'Velocity/value value' }],
+    }],
+  },
+  {
+    name: 'val',
+    detail: 'Value',
+    documentation: 'Shorthand for value.',
+    signatures: [{
+      label: 'val(value)',
+      parameters: [{ label: 'value', documentation: 'Value value' }],
+    }],
+  },
+  {
+    name: 'zip',
+    detail: 'Zip patterns together',
+    documentation: 'Shorthand for zip patterns together.',
+    signatures: [{
+      label: 'zip(value)',
+      parameters: [{ label: 'value', documentation: 'Zip patterns together value' }],
+    }],
+  },
+
+  // === EFFECTS ===
+  {
+    name: 'compose',
+    detail: 'Compose functions together',
+    documentation: 'Compose functions together.',
+    signatures: [{
+      label: 'compose(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'compressSpan',
+    detail: 'Compress time span',
+    documentation: 'Compress time span.',
+    signatures: [{
+      label: 'compressSpan(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'compressorAttack',
+    detail: 'Compressor attack time',
+    documentation: 'Compressor attack time.',
+    signatures: [{
+      label: 'compressorAttack(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'compressorKnee',
+    detail: 'Compressor knee',
+    documentation: 'Compressor knee.',
+    signatures: [{
+      label: 'compressorKnee(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'compressorRatio',
+    detail: 'Compressor ratio',
+    documentation: 'Compressor ratio.',
+    signatures: [{
+      label: 'compressorRatio(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'compressorRelease',
+    detail: 'Compressor release time',
+    documentation: 'Compressor release time.',
+    signatures: [{
+      label: 'compressorRelease(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'compressspan',
+    detail: 'Compress time span',
+    documentation: 'Compress time span.',
+    signatures: [{
+      label: 'compressspan(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'delayfb',
+    detail: 'Delay feedback',
+    documentation: 'Delay feedback.',
+    signatures: [{
+      label: 'delayfb(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'delayt',
+    detail: 'Delay time',
+    documentation: 'Delay time.',
+    signatures: [{
+      label: 'delayt(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'dist',
+    detail: 'Distortion effect',
+    documentation: 'Distortion effect.',
+    signatures: [{
+      label: 'dist(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'duck',
+    detail: 'Ducking/sidechain compression',
+    documentation: 'Ducking/sidechain compression.',
+    signatures: [{
+      label: 'duck(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'freeze',
+    detail: 'Freeze/granular freeze effect',
+    documentation: 'Freeze/granular freeze effect.',
+    signatures: [{
+      label: 'freeze(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'fshift',
+    detail: 'Frequency shift',
+    documentation: 'Frequency shift.',
+    signatures: [{
+      label: 'fshift(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'fshiftnote',
+    detail: 'Frequency shift by note',
+    documentation: 'Frequency shift by note.',
+    signatures: [{
+      label: 'fshiftnote(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'fshiftphase',
+    detail: 'Frequency shift phase',
+    documentation: 'Frequency shift phase.',
+    signatures: [{
+      label: 'fshiftphase(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'morph',
+    detail: 'Morph between patterns',
+    documentation: 'Morph between patterns.',
+    signatures: [{
+      label: 'morph(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'phaserrate',
+    detail: 'Phaser rate',
+    documentation: 'Phaser rate.',
+    signatures: [{
+      label: 'phaserrate(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'ring',
+    detail: 'Ring modulation',
+    documentation: 'Ring modulation.',
+    signatures: [{
+      label: 'ring(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'ringdf',
+    detail: 'Ring modulator dry/wet',
+    documentation: 'Ring modulator dry/wet.',
+    signatures: [{
+      label: 'ringdf(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+  {
+    name: 'ringf',
+    detail: 'Ring modulator frequency',
+    documentation: 'Ring modulator frequency.',
+    signatures: [{
+      label: 'ringf(value)',
+      parameters: [{ label: 'value', documentation: 'Effect parameter value' }],
+    }],
+  },
+
+  // === OTHER STRUDEL FUNCTIONS (minimal documentation) ===
+  {
+    name: 'activeLabel',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'activeLabel(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'analyze',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'analyze(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'applyN',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'applyN(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'arpWith',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'arpWith(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'backgroundImage',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'backgroundImage(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'band',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'band(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'bandf',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'bandf(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'bandq',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'bandq(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'base64ToUnicode',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'base64ToUnicode(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'bbexpr',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'bbexpr(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'bbst',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'bbst(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'berlinWith',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'berlinWith(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'bind',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'bind(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'binshift',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'binshift(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'bjork',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'bjork(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'blshift',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'blshift(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'brak',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'brak(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'brshift',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'brshift(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'bxor',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'bxor(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'bypass',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'bypass(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'calculateSteps',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'calculateSteps(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'channel',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'channel(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'chooseIn',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'chooseIn(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'chooseInWith',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'chooseInWith(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'chooseOut',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'chooseOut(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'chooseWith',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'chooseWith(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'chunkBack',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'chunkBack(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'chunkback',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'chunkback(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'clamp',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'clamp(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'code2hash',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'code2hash(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'comb',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'comb(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'constant',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'constant(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'contract',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'contract(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'ctlNum',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'ctlNum(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'ctranspose',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'ctranspose(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'curve',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'curve(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'cutoff',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'cutoff(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'cycleToSeconds',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'cycleToSeconds(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'degradeByWith',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'degradeByWith(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'degree',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'degree(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'deltaSlide',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'deltaSlide(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'dict',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'dict(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'dictionary',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'dictionary(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'drawLine',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'drawLine(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'drop',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'drop(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'eish',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'eish(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'enhance',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'enhance(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'euclidRot',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'euclidRot(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'euclidrot',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'euclidrot(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'expand',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'expand(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'expression',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'expression(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'extend',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'extend(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'fadeInTime',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'fadeInTime(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'fadeOutTime',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'fadeOutTime(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'fadeTime',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'fadeTime(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'filter',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'filter(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'flatten',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'flatten(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'fmrelease',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'fmrelease(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'fmvelocity',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'fmvelocity(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'focusSpan',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'focusSpan(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'focusspan',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'focusspan(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'fractionalArgs',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'fractionalArgs(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'frameRate',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'frameRate(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'frames',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'frames(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'freqToMidi',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'freqToMidi(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'fromBipolar',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'fromBipolar(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'func',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'func(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'grow',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'grow(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'harmonic',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'harmonic(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'hash2code',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'hash2code(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'hbrick',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'hbrick(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'hcutoff',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'hcutoff(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'hours',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'hours(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'hresonance',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'hresonance(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'hsla',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'hsla(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'imag',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'imag(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'kcutoff',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'kcutoff(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'keep',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'keep(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'keepif',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'keepif(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'krush',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'krush(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'lbrick',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'lbrick(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'listRange',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'listRange(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'logger',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'logger(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'loopb',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'loopb(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'loope',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'loope(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'lsize',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'lsize(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'mapArgs',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'mapArgs(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'midi2note',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'midi2note(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'midiToFreq',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'midiToFreq(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'midimap',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'midimap(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'mini',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'mini(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'mini2ast',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'mini2ast(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'miniAllStrings',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'miniAllStrings(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'minify',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'minify(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'minutes',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'minutes(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'mtranspose',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'mtranspose(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'noteToMidi',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'noteToMidi(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'numeralArgs',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'numeralArgs(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'octaveR',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'octaveR(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'octaves',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'octaves(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'octer',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'octer(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'octersub',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'octersub(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'octersubsub',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'octersubsub(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'offset',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'offset(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'overgain',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'overgain(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'overshape',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'overshape(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'pace',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'pace(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'pairs',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'pairs(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'panorient',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'panorient(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'panspan',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'panspan(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'pansplay',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'pansplay(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'panwidth',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'panwidth(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'partials',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'partials(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'patt',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'patt(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'patternifyAST',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'patternifyAST(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'pdec',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'pdec(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'perlinWith',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'perlinWith(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'phasdp',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'phasdp(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'pick',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'pick(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'pickReset',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'pickReset(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'pickSqueeze',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'pickSqueeze(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'pickmod',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'pickmod(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'pickmodF',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'pickmodF(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'pickmodOut',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'pickmodOut(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'pickmodReset',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'pickmodReset(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'pickmodRestart',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'pickmodRestart(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'pickmodSqueeze',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'pickmodSqueeze(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'pitchJump',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'pitchJump(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'pitchJumpTime',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'pitchJumpTime(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'polyTouch',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'polyTouch(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'polyrhythm',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'polyrhythm(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'prel',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'prel(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'psus',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'psus(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'psustain',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'psustain(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'randrun',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'randrun(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'rate',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'rate(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'rdim',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'rdim(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'real',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'real(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'repeatTime',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'repeatTime(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'replicate',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'replicate(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'resonance',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'resonance(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'rfade',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'rfade(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'rotate',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'rotate(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'rsize',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'rsize(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'scaleTrans',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'scaleTrans(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'scram',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'scram(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'seconds',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'seconds(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'semitone',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'semitone(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'seqPLoop',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'seqPLoop(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'sequence',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'sequence(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'sequenceP',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'sequenceP(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'shrink',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'shrink(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'shrinklist',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'shrinklist(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'signal',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'signal(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'slide',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'slide(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'slowChunk',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'slowChunk(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'slowcatPrime',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'slowcatPrime(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'slowchunk',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'slowchunk(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'smear',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'smear(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'sol2note',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'sol2note(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'songPtr',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'songPtr(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'sparsity',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'sparsity(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'speak',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'speak(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'splice',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'splice(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'splitAt',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'splitAt(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'squeeze',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'squeeze(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'stackBy',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'stackBy(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'stackCentre',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'stackCentre(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'stackLeft',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'stackLeft(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'stackRight',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'stackRight(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'steady',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'steady(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'stepalt',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'stepalt(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'steps',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'steps(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'stepsPerOctave',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'stepsPerOctave(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'strans',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'strans(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'stringifyValues',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'stringifyValues(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'stutWith',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'stutWith(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'stutwith',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'stutwith(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'sustainpedal',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'sustainpedal(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'take',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'take(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'timeCat',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'timeCat(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'timecat',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'timecat(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'toBipolar',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'toBipolar(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'tokenizeNote',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'tokenizeNote(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'tour',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'tour(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'trans',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'trans(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'triode',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'triode(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'tsdelay',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'tsdelay(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'unicodeToBase64',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'unicodeToBase64(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'uniq',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'uniq(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'uniqsort',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'uniqsort(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'uniqsortr',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'uniqsortr(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'valueToMidi',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'valueToMidi(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'vmod',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'vmod(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'voice',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'voice(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'voicingAlias',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'voicingAlias(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'warpatt',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'warpatt(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'warpdec',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'warpdec(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'warprel',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'warprel(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'warpsus',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'warpsus(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'wavetablePhaseRand',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'wavetablePhaseRand(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'wavetablePosition',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'wavetablePosition(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'wavetableWarp',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'wavetableWarp(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'wavetableWarpMode',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'wavetableWarpMode(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'wchooseCycles',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'wchooseCycles(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'withValue',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'withValue(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'wrandcat',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'wrandcat(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'wtatt',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'wtatt(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'wtdec',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'wtdec(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'wtrel',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'wtrel(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'wtsus',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'wtsus(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'xsdelay',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'xsdelay(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'zcrush',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'zcrush(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'zdelay',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'zdelay(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'zipWith',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'zipWith(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'zmod',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'zmod(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'znoise',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'znoise(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'zoomArc',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'zoomArc(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'zoomarc',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'zoomarc(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'zrand',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'zrand(...)',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'zzfx',
+    detail: 'Strudel function',
+    documentation: 'Strudel function. See strudel.cc for documentation.',
+    signatures: [{
+      label: 'zzfx(...)',
+      parameters: [],
+    }],
+  },
+
 ];
 
 // Common typos and their corrections
