@@ -944,6 +944,7 @@ show_window = function()
       stop_timer()
       state.bufnr = nil
       state.winid = nil
+      state.enabled = false  -- Mark as disabled so toggle will reopen
     end,
   })
 
