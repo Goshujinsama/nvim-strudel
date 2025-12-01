@@ -1377,6 +1377,590 @@ const STRUDEL_FUNCTIONS: FunctionSignature[] = [
       parameters: [{ label: 'pattern', documentation: 'Arpeggio pattern (e.g., "up", "down", "updown")' }],
     }],
   },
+  // Pattern combinators
+  {
+    name: 'fastcat',
+    detail: 'Fast concatenate',
+    documentation: 'Concatenate patterns, each taking one cycle (alias for cat)',
+    signatures: [{
+      label: 'fastcat(pattern1, pattern2, ...)',
+      parameters: [{ label: 'patterns', documentation: 'Patterns to concatenate' }],
+    }],
+  },
+  {
+    name: 'slowcat',
+    detail: 'Slow concatenate',
+    documentation: 'Concatenate patterns, each pattern plays for one cycle in sequence',
+    signatures: [{
+      label: 'slowcat(pattern1, pattern2, ...)',
+      parameters: [{ label: 'patterns', documentation: 'Patterns to concatenate' }],
+    }],
+  },
+  {
+    name: 'randcat',
+    detail: 'Random concatenate',
+    documentation: 'Randomly choose between patterns each cycle',
+    signatures: [{
+      label: 'randcat(pattern1, pattern2, ...)',
+      parameters: [{ label: 'patterns', documentation: 'Patterns to randomly choose from' }],
+    }],
+  },
+  {
+    name: 'pure',
+    detail: 'Pure value',
+    documentation: 'Create a pattern from a single value',
+    signatures: [{
+      label: 'pure(value)',
+      parameters: [{ label: 'value', documentation: 'Value to create pattern from' }],
+    }],
+  },
+  {
+    name: 'reify',
+    detail: 'Reify pattern',
+    documentation: 'Convert a value to a pattern if it is not already',
+    signatures: [{
+      label: 'reify(value)',
+      parameters: [{ label: 'value', documentation: 'Value or pattern' }],
+    }],
+  },
+  // Math operations
+  {
+    name: 'add',
+    detail: 'Add',
+    documentation: 'Add a value or pattern to the current pattern',
+    signatures: [{
+      label: 'add(value)',
+      parameters: [{ label: 'value', documentation: 'Value to add' }],
+    }],
+  },
+  {
+    name: 'sub',
+    detail: 'Subtract',
+    documentation: 'Subtract a value or pattern from the current pattern',
+    signatures: [{
+      label: 'sub(value)',
+      parameters: [{ label: 'value', documentation: 'Value to subtract' }],
+    }],
+  },
+  {
+    name: 'mul',
+    detail: 'Multiply',
+    documentation: 'Multiply the current pattern by a value or pattern',
+    signatures: [{
+      label: 'mul(value)',
+      parameters: [{ label: 'value', documentation: 'Value to multiply by' }],
+    }],
+  },
+  {
+    name: 'div',
+    detail: 'Divide',
+    documentation: 'Divide the current pattern by a value or pattern',
+    signatures: [{
+      label: 'div(value)',
+      parameters: [{ label: 'value', documentation: 'Value to divide by' }],
+    }],
+  },
+  // Juxtapose variations
+  {
+    name: 'juxBy',
+    detail: 'Juxtapose by amount',
+    documentation: 'Apply function to right channel with adjustable stereo width',
+    signatures: [{
+      label: 'juxBy(amount, function)',
+      parameters: [
+        { label: 'amount', documentation: 'Stereo width (0-1, 0.5 = half width)' },
+        { label: 'function', documentation: 'Function to apply to right channel' },
+      ],
+    }],
+  },
+  // Envelope shortcuts
+  {
+    name: 'ad',
+    detail: 'Attack-Decay envelope',
+    documentation: 'Set attack and decay times',
+    signatures: [{
+      label: 'ad(attack, decay)',
+      parameters: [
+        { label: 'attack', documentation: 'Attack time in seconds' },
+        { label: 'decay', documentation: 'Decay time in seconds' },
+      ],
+    }],
+  },
+  {
+    name: 'adsr',
+    detail: 'ADSR envelope',
+    documentation: 'Set full ADSR envelope',
+    signatures: [{
+      label: 'adsr(attack, decay, sustain, release)',
+      parameters: [
+        { label: 'attack', documentation: 'Attack time' },
+        { label: 'decay', documentation: 'Decay time' },
+        { label: 'sustain', documentation: 'Sustain level (0-1)' },
+        { label: 'release', documentation: 'Release time' },
+      ],
+    }],
+  },
+  {
+    name: 'ar',
+    detail: 'Attack-Release envelope',
+    documentation: 'Set attack and release times (no sustain)',
+    signatures: [{
+      label: 'ar(attack, release)',
+      parameters: [
+        { label: 'attack', documentation: 'Attack time in seconds' },
+        { label: 'release', documentation: 'Release time in seconds' },
+      ],
+    }],
+  },
+  // Duration and timing
+  {
+    name: 'dur',
+    detail: 'Duration',
+    documentation: 'Set event duration in cycles',
+    signatures: [{
+      label: 'dur(cycles)',
+      parameters: [{ label: 'cycles', documentation: 'Duration in cycles' }],
+    }],
+  },
+  {
+    name: 'legato',
+    detail: 'Legato',
+    documentation: 'Set note legato (overlap/gap between notes)',
+    signatures: [{
+      label: 'legato(value)',
+      parameters: [{ label: 'value', documentation: 'Legato value (1 = full duration, <1 = gap, >1 = overlap)' }],
+    }],
+  },
+  {
+    name: 'nudge',
+    detail: 'Nudge timing',
+    documentation: 'Shift events in time by a small amount',
+    signatures: [{
+      label: 'nudge(seconds)',
+      parameters: [{ label: 'seconds', documentation: 'Time offset in seconds' }],
+    }],
+  },
+  {
+    name: 'unit',
+    detail: 'Time unit',
+    documentation: 'Set the time unit for speed calculations',
+    signatures: [{
+      label: 'unit(type)',
+      parameters: [{ label: 'type', documentation: 'Unit type: "r" (rate), "c" (cycle), "s" (seconds)' }],
+    }],
+  },
+  // Gate and hold
+  {
+    name: 'gate',
+    detail: 'Gate',
+    documentation: 'Set gate time (note on duration)',
+    signatures: [{
+      label: 'gate(value)',
+      parameters: [{ label: 'value', documentation: 'Gate time (0-1)' }],
+    }],
+  },
+  {
+    name: 'hold',
+    detail: 'Hold',
+    documentation: 'Hold/sustain the sound',
+    signatures: [{
+      label: 'hold(value)',
+      parameters: [{ label: 'value', documentation: 'Hold time' }],
+    }],
+  },
+  // Synth parameters
+  {
+    name: 'freq',
+    detail: 'Frequency',
+    documentation: 'Set frequency in Hz directly',
+    signatures: [{
+      label: 'freq(hz)',
+      parameters: [{ label: 'hz', documentation: 'Frequency in Hz' }],
+    }],
+  },
+  {
+    name: 'noise',
+    detail: 'Noise',
+    documentation: 'Add noise to the sound',
+    signatures: [{
+      label: 'noise(amount)',
+      parameters: [{ label: 'amount', documentation: 'Noise amount (0-1)' }],
+    }],
+  },
+  {
+    name: 'detune',
+    detail: 'Detune',
+    documentation: 'Detune the sound in semitones',
+    signatures: [{
+      label: 'detune(semitones)',
+      parameters: [{ label: 'semitones', documentation: 'Detune amount in semitones' }],
+    }],
+  },
+  {
+    name: 'unison',
+    detail: 'Unison',
+    documentation: 'Add unison voices for thicker sound',
+    signatures: [{
+      label: 'unison(voices)',
+      parameters: [{ label: 'voices', documentation: 'Number of unison voices' }],
+    }],
+  },
+  // FM synthesis
+  {
+    name: 'fm',
+    detail: 'FM amount',
+    documentation: 'Set FM synthesis modulation amount',
+    signatures: [{
+      label: 'fm(amount)',
+      parameters: [{ label: 'amount', documentation: 'FM modulation amount' }],
+    }],
+  },
+  {
+    name: 'fmi',
+    detail: 'FM index',
+    documentation: 'Set FM modulation index',
+    signatures: [{
+      label: 'fmi(index)',
+      parameters: [{ label: 'index', documentation: 'FM modulation index' }],
+    }],
+  },
+  {
+    name: 'fmh',
+    detail: 'FM harmonic',
+    documentation: 'Set FM modulator harmonic ratio',
+    signatures: [{
+      label: 'fmh(ratio)',
+      parameters: [{ label: 'ratio', documentation: 'Harmonic ratio of modulator' }],
+    }],
+  },
+  // Vibrato
+  {
+    name: 'vib',
+    detail: 'Vibrato',
+    documentation: 'Add vibrato effect',
+    signatures: [{
+      label: 'vib(depth)',
+      parameters: [{ label: 'depth', documentation: 'Vibrato depth' }],
+    }],
+  },
+  {
+    name: 'vibrato',
+    detail: 'Vibrato (full)',
+    documentation: 'Add vibrato with rate control',
+    signatures: [{
+      label: 'vibrato(depth, rate)',
+      parameters: [
+        { label: 'depth', documentation: 'Vibrato depth' },
+        { label: 'rate', documentation: 'Vibrato rate in Hz' },
+      ],
+    }],
+  },
+  // Leslie effect
+  {
+    name: 'leslie',
+    detail: 'Leslie speaker',
+    documentation: 'Apply Leslie speaker effect (rotating speaker)',
+    signatures: [{
+      label: 'leslie(amount)',
+      parameters: [{ label: 'amount', documentation: 'Leslie effect amount' }],
+    }],
+  },
+  // Wavetable
+  {
+    name: 'wt',
+    detail: 'Wavetable',
+    documentation: 'Use wavetable synthesis',
+    signatures: [{
+      label: 'wt(table)',
+      parameters: [{ label: 'table', documentation: 'Wavetable name or number' }],
+    }],
+  },
+  // Pattern manipulation
+  {
+    name: 'within',
+    detail: 'Within',
+    documentation: 'Apply function to a portion of the pattern',
+    signatures: [{
+      label: 'within(start, end, function)',
+      parameters: [
+        { label: 'start', documentation: 'Start position (0-1)' },
+        { label: 'end', documentation: 'End position (0-1)' },
+        { label: 'function', documentation: 'Function to apply' },
+      ],
+    }],
+  },
+  {
+    name: 'focus',
+    detail: 'Focus',
+    documentation: 'Focus on a portion of the pattern',
+    signatures: [{
+      label: 'focus(start, end)',
+      parameters: [
+        { label: 'start', documentation: 'Start position (0-1)' },
+        { label: 'end', documentation: 'End position (0-1)' },
+      ],
+    }],
+  },
+  {
+    name: 'contrast',
+    detail: 'Contrast',
+    documentation: 'Apply different functions based on a boolean pattern',
+    signatures: [{
+      label: 'contrast(trueFunc, falseFunc, boolPattern)',
+      parameters: [
+        { label: 'trueFunc', documentation: 'Function when true' },
+        { label: 'falseFunc', documentation: 'Function when false' },
+        { label: 'boolPattern', documentation: 'Boolean pattern' },
+      ],
+    }],
+  },
+  // Scramble and shuffle
+  {
+    name: 'scramble',
+    detail: 'Scramble',
+    documentation: 'Randomly rearrange pattern segments',
+    signatures: [{
+      label: 'scramble(n)',
+      parameters: [{ label: 'n', documentation: 'Number of segments' }],
+    }],
+  },
+  {
+    name: 'shuffle',
+    detail: 'Shuffle',
+    documentation: 'Shuffle pattern segments (same random order each cycle)',
+    signatures: [{
+      label: 'shuffle(n)',
+      parameters: [{ label: 'n', documentation: 'Number of segments' }],
+    }],
+  },
+  {
+    name: 'bite',
+    detail: 'Bite',
+    documentation: 'Slice and rearrange pattern segments',
+    signatures: [{
+      label: 'bite(n, pattern)',
+      parameters: [
+        { label: 'n', documentation: 'Number of segments' },
+        { label: 'pattern', documentation: 'Pattern of segment indices' },
+      ],
+    }],
+  },
+  // Inhabit
+  {
+    name: 'inhabit',
+    detail: 'Inhabit',
+    documentation: 'Map pattern values to other patterns',
+    signatures: [{
+      label: 'inhabit(mapping)',
+      parameters: [{ label: 'mapping', documentation: 'Object mapping values to patterns' }],
+    }],
+  },
+  // Weave
+  {
+    name: 'weave',
+    detail: 'Weave',
+    documentation: 'Weave patterns together with time offsets',
+    signatures: [{
+      label: 'weave(subdivisions, patterns...)',
+      parameters: [
+        { label: 'subdivisions', documentation: 'Number of subdivisions' },
+        { label: 'patterns', documentation: 'Patterns to weave' },
+      ],
+    }],
+  },
+  {
+    name: 'weaveWith',
+    detail: 'Weave with function',
+    documentation: 'Weave with a function applied at each step',
+    signatures: [{
+      label: 'weaveWith(subdivisions, function, patterns...)',
+      parameters: [
+        { label: 'subdivisions', documentation: 'Number of subdivisions' },
+        { label: 'function', documentation: 'Function to apply' },
+        { label: 'patterns', documentation: 'Patterns to weave' },
+      ],
+    }],
+  },
+  // Spin and stripe
+  {
+    name: 'spin',
+    detail: 'Spin',
+    documentation: 'Layer pattern with itself, rotated in stereo',
+    signatures: [{
+      label: 'spin(n)',
+      parameters: [{ label: 'n', documentation: 'Number of rotations' }],
+    }],
+  },
+  {
+    name: 'stripe',
+    detail: 'Stripe',
+    documentation: 'Apply function in stripes across the pattern',
+    signatures: [{
+      label: 'stripe(n)',
+      parameters: [{ label: 'n', documentation: 'Number of stripes' }],
+    }],
+  },
+  // Reset
+  {
+    name: 'reset',
+    detail: 'Reset',
+    documentation: 'Reset pattern when triggered',
+    signatures: [{
+      label: 'reset(trigger)',
+      parameters: [{ label: 'trigger', documentation: 'Trigger pattern' }],
+    }],
+  },
+  {
+    name: 'resetCycles',
+    detail: 'Reset cycles',
+    documentation: 'Reset pattern after N cycles',
+    signatures: [{
+      label: 'resetCycles(n)',
+      parameters: [{ label: 'n', documentation: 'Number of cycles before reset' }],
+    }],
+  },
+  // Set
+  {
+    name: 'set',
+    detail: 'Set',
+    documentation: 'Set control values from an object pattern',
+    signatures: [{
+      label: 'set(pattern)',
+      parameters: [{ label: 'pattern', documentation: 'Pattern of {control: value} objects' }],
+    }],
+  },
+  // MIDI
+  {
+    name: 'ccn',
+    detail: 'CC number',
+    documentation: 'Set MIDI CC number',
+    signatures: [{
+      label: 'ccn(number)',
+      parameters: [{ label: 'number', documentation: 'MIDI CC number (0-127)' }],
+    }],
+  },
+  {
+    name: 'ccv',
+    detail: 'CC value',
+    documentation: 'Set MIDI CC value',
+    signatures: [{
+      label: 'ccv(value)',
+      parameters: [{ label: 'value', documentation: 'MIDI CC value (0-127)' }],
+    }],
+  },
+  {
+    name: 'midichan',
+    detail: 'MIDI channel',
+    documentation: 'Set MIDI channel',
+    signatures: [{
+      label: 'midichan(channel)',
+      parameters: [{ label: 'channel', documentation: 'MIDI channel (0-15)' }],
+    }],
+  },
+  {
+    name: 'midiport',
+    detail: 'MIDI port',
+    documentation: 'Set MIDI output port',
+    signatures: [{
+      label: 'midiport(port)',
+      parameters: [{ label: 'port', documentation: 'MIDI port name' }],
+    }],
+  },
+  // Color/visualization
+  {
+    name: 'color',
+    detail: 'Color',
+    documentation: 'Set color for visualization',
+    signatures: [{
+      label: 'color(value)',
+      parameters: [{ label: 'value', documentation: 'Color value (CSS color or pattern)' }],
+    }],
+  },
+  // Utility
+  {
+    name: 'log',
+    detail: 'Log',
+    documentation: 'Log pattern values to console for debugging',
+    signatures: [{
+      label: 'log()',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'apply',
+    detail: 'Apply',
+    documentation: 'Apply a function to the pattern',
+    signatures: [{
+      label: 'apply(function)',
+      parameters: [{ label: 'function', documentation: 'Function to apply' }],
+    }],
+  },
+  {
+    name: 'all',
+    detail: 'All',
+    documentation: 'Apply function to all events',
+    signatures: [{
+      label: 'all(function)',
+      parameters: [{ label: 'function', documentation: 'Function to apply to all events' }],
+    }],
+  },
+  // Press
+  {
+    name: 'press',
+    detail: 'Press',
+    documentation: 'Compress events to the first half of their timespan',
+    signatures: [{
+      label: 'press()',
+      parameters: [],
+    }],
+  },
+  {
+    name: 'pressBy',
+    detail: 'Press by',
+    documentation: 'Compress events by a specified amount',
+    signatures: [{
+      label: 'pressBy(amount)',
+      parameters: [{ label: 'amount', documentation: 'Compression amount (0-1)' }],
+    }],
+  },
+  // Pick functions for sample selection
+  {
+    name: 'pickF',
+    detail: 'Pick with function',
+    documentation: 'Pick samples using a function',
+    signatures: [{
+      label: 'pickF(function)',
+      parameters: [{ label: 'function', documentation: 'Function to determine sample selection' }],
+    }],
+  },
+  {
+    name: 'pickOut',
+    detail: 'Pick out',
+    documentation: 'Pick samples cycling through indices',
+    signatures: [{
+      label: 'pickOut(pattern)',
+      parameters: [{ label: 'pattern', documentation: 'Pattern of sample indices' }],
+    }],
+  },
+  {
+    name: 'pickRestart',
+    detail: 'Pick restart',
+    documentation: 'Pick samples, restarting on each cycle',
+    signatures: [{
+      label: 'pickRestart()',
+      parameters: [],
+    }],
+  },
+  // Granular
+  {
+    name: 'granular',
+    detail: 'Granular',
+    documentation: 'Apply granular synthesis',
+    signatures: [{
+      label: 'granular(options)',
+      parameters: [{ label: 'options', documentation: 'Granular synthesis options' }],
+    }],
+  },
 ];
 
 // Common typos and their corrections
