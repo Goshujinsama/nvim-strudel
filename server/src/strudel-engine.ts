@@ -564,9 +564,7 @@ export class StrudelEngine {
           // Check if this was a pause or stop
           if (this.isPausing) {
             this.paused = true;
-            // Capture current cycle position for visualization while paused
-            const scheduler = (this.repl as any)?.scheduler;
-            this.pausedAtCycle = scheduler?.now?.() || this.cycle;
+            // pausedAtCycle already captured in pause() before repl.pause()
             // playing stays true
             // Keep broadcasting so pianoroll maintains playhead position
             this.isPausing = false;
@@ -671,6 +669,9 @@ export class StrudelEngine {
    */
   pause(): void {
     if (!this.repl) return;
+    // Capture cycle position BEFORE pausing, as scheduler may reset
+    const scheduler = (this.repl as any)?.scheduler;
+    this.pausedAtCycle = scheduler?.now?.() || this.cycle;
     this.isPausing = true; // Flag so onToggle knows this is a pause
     this.repl.pause();
   }
