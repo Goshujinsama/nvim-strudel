@@ -66,6 +66,13 @@ export function isOscConnected(): boolean {
 }
 
 /**
+ * Get the OSC UDP port for sending additional messages (e.g., sample loading)
+ */
+export function getOscPort(): any {
+  return udpPort;
+}
+
+/**
  * Convert a hap value to SuperDirt OSC message arguments
  * Based on @strudel/osc's parseControlsFromHap
  */

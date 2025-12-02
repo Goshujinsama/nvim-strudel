@@ -17,6 +17,7 @@
  */
 
 import * as nodeWebAudio from 'node-web-audio-api';
+import { initWorkletPolyfill } from './worklet-polyfill.js';
 
 // Store whether we've initialized
 let initialized = false;
@@ -32,6 +33,23 @@ export function initAudioPolyfill(): void {
 
   // Add all node-web-audio-api exports to globalThis
   Object.assign(globalThis, nodeWebAudio);
+
+  // Wrap AudioContext to use 'playback' latency hint by default on Linux
+  // This prevents audio glitches/underruns with ALSA backend
+  // See: https://github.com/niccolorosato/node-web-audio-api#audio-backend-and-latency
+  const OriginalAudioContext = (globalThis as any).AudioContext;
+  (globalThis as any).AudioContext = class AudioContextWrapper extends OriginalAudioContext {
+    constructor(options?: AudioContextOptions) {
+      // Default to 'playback' latency hint on Linux for stable audio
+      // Users can override with WEB_AUDIO_LATENCY env var or explicit option
+      const defaultOptions: AudioContextOptions = {
+        latencyHint: process.env.WEB_AUDIO_LATENCY as AudioContextLatencyCategory || 'playback',
+        ...options,
+      };
+      super(defaultOptions);
+      console.log(`[audio-polyfill] AudioContext created with latencyHint: ${defaultOptions.latencyHint}`);
+    }
+  };
 
   // Add a minimal `window` object for superdough code that expects it
   // (e.g., reverbGen.mjs assigns to window.filterNode, dspworklet.mjs adds event listener)
@@ -201,6 +219,30 @@ export function initAudioPolyfill(): void {
       return convolver;
     };
     console.log('[audio-polyfill] Added AudioContext.prototype.createReverb');
+  }
+
+  // Initialize AudioWorklet polyfill for processors like shape, crush, etc.
+  initWorkletPolyfill();
+}
+
+/**
+ * Load our Node.js-compatible worklets onto a specific audio context
+ * Call this after superdough's audio context is available
+ */
+export async function loadNodeWorklets(ctx: any): Promise<void> {
+  const path = await import('path');
+  const { fileURLToPath } = await import('url');
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const workletPath = path.join(__dirname, 'worklets-node.js');
+  
+  console.log('[audio-polyfill] Loading Node.js worklets onto audio context...');
+  try {
+    await ctx.audioWorklet.addModule(workletPath);
+    console.log('[audio-polyfill] Successfully loaded worklets-node.js');
+  } catch (err) {
+    console.error('[audio-polyfill] Failed to load worklets-node.js:', err);
+    throw err;
   }
 }
 

@@ -25,7 +25,28 @@ local function get_server_cmd()
   local plugin_root = utils.get_plugin_root()
   local server_path = plugin_root .. '/server/dist/index.js'
   if vim.fn.filereadable(server_path) == 1 then
-    return { 'node', server_path }
+    local cmd = { 'node', server_path }
+
+    -- Add audio output configuration
+    if config.audio then
+      if config.audio.output == 'osc' then
+        table.insert(cmd, '--osc')
+        if config.audio.osc_host then
+          table.insert(cmd, '--osc-host')
+          table.insert(cmd, config.audio.osc_host)
+        end
+        if config.audio.osc_port then
+          table.insert(cmd, '--osc-port')
+          table.insert(cmd, tostring(config.audio.osc_port))
+        end
+        -- auto_superdirt defaults to true, only skip if explicitly false
+        if config.audio.auto_superdirt ~= false then
+          table.insert(cmd, '--auto-superdirt')
+        end
+      end
+    end
+
+    return cmd
   end
 
   return nil

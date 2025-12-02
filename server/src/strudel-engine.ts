@@ -7,6 +7,8 @@ import { transpiler } from '@strudel/transpiler';
 import type { ActiveElement, VisualizationEvent } from './types.js';
 import { initOsc, sendHapToSuperDirt, isOscConnected, closeOsc } from './osc-output.js';
 import { writeEngineState, clearEngineState } from './engine-state.js';
+import { loadSamples as loadSamplesForSuperDirt, initSampleManager, notifySuperDirtLoadSamples, setupOscPort } from './sample-manager.js';
+import { loadSoundsForCode } from './on-demand-loader.js';
 
 // NOTE: Web Audio API polyfill is initialized in index.ts before this module is imported.
 // This ensures AudioContext is available before superdough checks for it.
@@ -17,10 +19,30 @@ import { superdough, registerSynthSounds, registerZZFXSounds, aliasBank, samples
 // Import our custom soundfont loader (adapted for Node.js)
 import { registerSoundfonts, getSoundfontNames } from './soundfonts.js';
 
+// Import the worklet loader
+import { loadNodeWorklets } from './audio-polyfill.js';
+
 // Track different types of sounds separately
 const synthSounds: Set<string> = new Set();      // Synth waveforms (sine, saw, etc.)
 const sampleBanks: Set<string> = new Set();      // Bank names for .bank() (RolandTR808, etc.)
 const loadedSamples: Set<string> = new Set();    // All sample/sound names for s()/sound()
+
+// Flag to enable SuperDirt sample downloading (set by engine when OSC mode is active)
+let oscModeEnabled = false;
+let oscPortRef: any = null;
+
+/**
+ * Enable OSC mode for sample loading
+ * When enabled, samples() will also download and cache for SuperDirt
+ */
+export function enableOscSampleLoading(oscPort: any): void {
+  oscModeEnabled = true;
+  oscPortRef = oscPort;
+  setupOscPort(oscPort);
+  initSampleManager().catch(err => {
+    console.error('[strudel-engine] Failed to init sample manager:', err);
+  });
+}
 
 // REPL control functions - these are bound to the engine instance after initialization
 // We use a mutable reference so evalScope can access them before the engine exists
@@ -66,7 +88,23 @@ async function samples(
   // Track sample names before loading (no options needed - they're for superdough)
   await trackSampleNames(source, baseUrl);
   
-  // Call the real samples() function
+  // If OSC mode is enabled, also download samples for SuperDirt
+  if (oscModeEnabled) {
+    try {
+      console.log('[strudel-engine] Downloading samples for SuperDirt...');
+      const { bankPath, bankNames } = await loadSamplesForSuperDirt(source, baseUrl);
+      if (bankNames.length > 0) {
+        console.log(`[strudel-engine] SuperDirt samples ready: ${bankNames.join(', ')}`);
+        // Notify SuperDirt to reload samples
+        notifySuperDirtLoadSamples(bankPath);
+      }
+    } catch (err) {
+      console.error('[strudel-engine] Failed to load samples for SuperDirt:', err);
+      // Continue anyway - WebAudio samples will still work
+    }
+  }
+  
+  // Call the real samples() function for WebAudio
   await superdoughSamples(source, baseUrl, options);
   
   console.log(`[strudel-engine] Samples loaded, total available: ${loadedSamples.size}`);
@@ -385,9 +423,14 @@ export class StrudelEngine {
     
     console.log('[strudel-engine] Engine initialized');
     
-    // Log audio context state
+    // Log audio context state and load worklets
     const ctx = getAudioContext();
     console.log(`[strudel-engine] AudioContext: ${ctx.state}, ${ctx.sampleRate}Hz`);
+    
+    // Load our Node.js-compatible worklets onto the audio context
+    loadNodeWorklets(ctx).catch(err => {
+      console.error('[strudel-engine] Failed to load worklets:', err);
+    });
   }
 
   /**
@@ -496,6 +539,10 @@ export class StrudelEngine {
       // Type says async but we return synchronously for tight timing - this is fine
       // The Web Audio API handles the actual scheduling via absoluteTime
       defaultOutput: async (hap: any, deadline: number, duration: number, cps: number, t: number): Promise<void> => {
+        // DEBUG: Log every trigger
+        const sound = hap.value?.s || hap.value?.note || '?';
+        console.log(`[strudel-engine] TRIGGER: ${sound} deadline=${deadline.toFixed(3)} osc=${this.oscEnabled}`);
+        
         // IMPORTANT: Don't await superdough - fire and forget for tight timing
         // The Web Audio API handles scheduling internally via absoluteTime
         
@@ -635,6 +682,14 @@ export class StrudelEngine {
       
       console.log('[strudel-engine] Evaluating code:', code.substring(0, 100) + (code.length > 100 ? '...' : ''));
       
+      // If OSC mode is enabled, load any missing sounds on-demand before eval
+      if (oscModeEnabled) {
+        const loadedSounds = await loadSoundsForCode(code);
+        if (loadedSounds.length > 0) {
+          console.log(`[strudel-engine] On-demand loaded for OSC: ${loadedSounds.join(', ')}`);
+        }
+      }
+      
       await this.repl.evaluate(code, true);
       
       // Check if an error was captured via onEvalError callback
@@ -655,12 +710,15 @@ export class StrudelEngine {
    * @returns true if playback started, false if no pattern to play
    */
   play(): boolean {
+    console.log('[strudel-engine] play() called, repl:', !!this.repl, 'code:', !!this.currentCode);
     if (!this.repl) return false;
     if (!this.currentCode) {
       console.log('[strudel-engine] No pattern to play - evaluate code first');
       return false;
     }
+    console.log('[strudel-engine] Calling repl.start()...');
     this.repl.start();
+    console.log('[strudel-engine] repl.start() returned');
     return true;
   }
 

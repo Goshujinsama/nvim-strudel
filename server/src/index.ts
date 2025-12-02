@@ -6,6 +6,15 @@
  * 
  * IMPORTANT: Audio polyfill must be initialized BEFORE importing superdough.
  * We use dynamic imports to ensure proper ordering.
+ * 
+ * Command-line arguments:
+ *   --port <port>         TCP server port (default: 37812)
+ *   --host <host>         TCP server host (default: 127.0.0.1)
+ *   --osc                 Use OSC output (SuperDirt) instead of Web Audio
+ *   --osc-host <host>     SuperDirt OSC host (default: 127.0.0.1)
+ *   --osc-port <port>     SuperDirt OSC port (default: 57120)
+ *   --auto-superdirt      Auto-start SuperDirt if sclang available
+ *   --superdirt-verbose   Show SuperCollider output
  */
 
 // Step 1: Initialize audio polyfill (static import is OK here since audio-polyfill
@@ -16,7 +25,11 @@ initAudioPolyfill();
 // Step 2: Now we can safely import modules that depend on Web Audio API
 // Using dynamic imports to ensure the polyfill runs first
 const { StrudelTcpServer } = await import('./tcp-server.js');
-const { StrudelEngine } = await import('./strudel-engine.js');
+const { StrudelEngine, enableOscSampleLoading } = await import('./strudel-engine.js');
+import { SuperDirtLauncher, isJackRunning, startJack } from './superdirt-launcher.js';
+import { getOscPort } from './osc-output.js';
+import { initSampleManager, setupOscPort } from './sample-manager.js';
+import { platform } from 'os';
 import type { ServerConfig } from './types.js';
 
 const DEFAULT_PORT = 37812;
@@ -24,31 +37,145 @@ const DEFAULT_HOST = '127.0.0.1';
 const DEFAULT_OSC_HOST = '127.0.0.1';
 const DEFAULT_OSC_PORT = 57120;
 
-async function main() {
-  const config: ServerConfig = {
-    port: parseInt(process.env.STRUDEL_PORT || String(DEFAULT_PORT), 10),
-    host: process.env.STRUDEL_HOST || DEFAULT_HOST,
+/**
+ * Parse command-line arguments
+ */
+function parseArgs(): {
+  port: number;
+  host: string;
+  useOsc: boolean;
+  oscHost: string;
+  oscPort: number;
+  autoSuperDirt: boolean;
+  superDirtVerbose: boolean;
+} {
+  const args = process.argv.slice(2);
+  const result = {
+    port: DEFAULT_PORT,
+    host: DEFAULT_HOST,
+    useOsc: false,
+    oscHost: DEFAULT_OSC_HOST,
+    oscPort: DEFAULT_OSC_PORT,
+    autoSuperDirt: false,
+    superDirtVerbose: false,
   };
 
-  const useOsc = process.env.STRUDEL_USE_OSC === '1';
-  const oscHost = process.env.STRUDEL_OSC_HOST || DEFAULT_OSC_HOST;
-  const oscPort = parseInt(process.env.STRUDEL_OSC_PORT || String(DEFAULT_OSC_PORT), 10);
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    switch (arg) {
+      case '--port':
+        result.port = parseInt(args[++i], 10);
+        break;
+      case '--host':
+        result.host = args[++i];
+        break;
+      case '--osc':
+        result.useOsc = true;
+        break;
+      case '--osc-host':
+        result.oscHost = args[++i];
+        break;
+      case '--osc-port':
+        result.oscPort = parseInt(args[++i], 10);
+        break;
+      case '--auto-superdirt':
+        result.autoSuperDirt = true;
+        break;
+      case '--superdirt-verbose':
+        result.superDirtVerbose = true;
+        break;
+    }
+  }
+
+  return result;
+}
+
+async function main() {
+  const args = parseArgs();
+  
+  const config: ServerConfig = {
+    port: args.port,
+    host: args.host,
+  };
+
+  const useOsc = args.useOsc;
+  const oscHost = args.oscHost;
+  const oscPort = args.oscPort;
+  const autoSuperDirt = args.autoSuperDirt;
+  const superDirtVerbose = args.superDirtVerbose;
 
   console.log('[strudel-server] Starting server...');
+
+  // Auto-start SuperDirt if requested and OSC mode is enabled
+  let superDirtLauncher: SuperDirtLauncher | null = null;
+  
+  if (autoSuperDirt && useOsc) {
+    if (SuperDirtLauncher.isSclangAvailable()) {
+      console.log('[strudel-server] Auto-starting SuperDirt...');
+      
+      // On Linux, check/start JACK first
+      if (platform() === 'linux') {
+        if (!isJackRunning()) {
+          console.log('[strudel-server] JACK not running, attempting to start...');
+          // Try common audio devices
+          if (!startJack('hw:1') && !startJack('hw:0')) {
+            console.warn('[strudel-server] Could not auto-start JACK - start it manually');
+          }
+        }
+      }
+      
+      superDirtLauncher = new SuperDirtLauncher({
+        port: oscPort,
+        verbose: superDirtVerbose,
+        startupTimeout: 45000, // SuperDirt can take a while to load samples
+      });
+      
+      const started = await superDirtLauncher.start();
+      if (!started) {
+        console.warn('[strudel-server] SuperDirt failed to start - falling back to Web Audio');
+        superDirtLauncher = null;
+      }
+    } else {
+      console.log('[strudel-server] sclang not found - SuperDirt auto-start disabled');
+      console.log('[strudel-server] Install SuperCollider to use SuperDirt: https://supercollider.github.io/');
+    }
+  }
 
   const server = new StrudelTcpServer(config);
   const engine = new StrudelEngine();
 
-  // Web Audio is enabled by default
-  console.log('[strudel-server] Web Audio output enabled (superdough)');
-
-  // Optionally enable OSC output to SuperDirt
+  // When using OSC, disable Web Audio output
   if (useOsc) {
+    engine.setWebAudioEnabled(false);
+    console.log('[strudel-server] Web Audio disabled (OSC mode)');
+  } else {
+    console.log('[strudel-server] Web Audio output enabled (superdough)');
+  }
+
+  // Enable OSC output to SuperDirt if requested
+  if (useOsc) {
+    // If we auto-started SuperDirt, wait a moment for it to fully initialize
+    if (superDirtLauncher?.isActive()) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
     const oscEnabled = await engine.enableOsc(oscHost, oscPort);
     if (oscEnabled) {
       console.log(`[strudel-server] OSC output enabled -> ${oscHost}:${oscPort}`);
+      
+      // Enable sample downloading/caching for SuperDirt
+      // This hooks into the samples() function to also download for SuperDirt
+      const port = getOscPort();
+      if (port) {
+        enableOscSampleLoading(port);
+        console.log('[strudel-server] OSC sample loading enabled');
+        console.log('[strudel-server] Samples/soundfonts will be loaded on-demand when patterns use them');
+      }
     } else {
       console.log('[strudel-server] OSC output failed (SuperDirt not running?)');
+      if (useOsc && !superDirtLauncher?.isActive()) {
+        console.error('[strudel-server] ERROR: OSC mode but SuperDirt not available!');
+      }
     }
   }
 
@@ -178,6 +305,12 @@ async function main() {
     console.log('[strudel-server] Shutting down...');
     engine.dispose();
     await server.stop();
+    
+    // Stop SuperDirt if we started it
+    if (superDirtLauncher) {
+      superDirtLauncher.stop();
+    }
+    
     process.exit(0);
   };
 
