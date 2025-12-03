@@ -378,6 +378,33 @@ The `--verbose` flag enables detailed OSC message logging, showing:
 - Envelope parameters (attack, release, sustain)
 - Soundfont-specific parameters (sfAttack, sfRelease, sfSustain)
 
+#### Memory Leak Testing
+
+Use `test-long.mjs` for memory monitoring over extended periods:
+
+```bash
+cd server
+
+# Runs for 3 minutes, prints memory stats every 10 seconds
+node test-long.mjs
+```
+
+Output shows heap, RSS, and external memory usage over time. Useful for detecting memory leaks in the audio engine (e.g., tremolo LFO nodes not being cleaned up).
+
+#### OSC Debugging
+
+Use `osc-sniffer.mjs` to capture and display OSC messages:
+
+```bash
+cd server
+
+# Listen on port 57120 (same as SuperDirt)
+# Note: Stop SuperDirt first, or it will conflict
+node osc-sniffer.mjs
+```
+
+This captures all OSC messages sent to port 57120 and displays their address and arguments. Useful for debugging what the server is actually sending to SuperDirt.
+
 #### Unit Tests
 - Lua tests: Use plenary.nvim test harness
 - TypeScript tests: Use vitest
