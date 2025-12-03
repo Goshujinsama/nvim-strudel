@@ -325,6 +325,36 @@ require('strudel').setup({
 - Document public APIs with JSDoc
 
 ### Testing
+
+#### Testing Patterns (Audio Playback)
+
+The easiest way to test a pattern is with `test-pattern.mjs`:
+
+```bash
+cd server
+
+# Test a pattern file (plays for 10 seconds by default)
+node test-pattern.mjs path/to/pattern.strudel
+
+# Test with custom duration (in seconds)
+node test-pattern.mjs path/to/pattern.strudel 5
+
+# Test inline pattern via stdin
+echo 's("bd sd hh sd").bank("RolandTR909")' | node test-pattern.mjs - 5
+```
+
+This script:
+1. Kills any existing strudel-server processes automatically
+2. Initializes the audio polyfill and Strudel engine directly (no separate server needed)
+3. Loads samples and evaluates the pattern
+4. Plays for the specified duration, then cleanly stops
+
+**Before testing**, ensure the server is built:
+```bash
+cd server && npm run build
+```
+
+#### Unit Tests
 - Lua tests: Use plenary.nvim test harness
 - TypeScript tests: Use vitest
 - Integration tests: Spawn Neovim headless with embedded test patterns
