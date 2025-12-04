@@ -154,3 +154,11 @@ declare module 'superdough/audioContext.mjs' {
   export function setAudioContext(ctx: AudioContext): void;
   export const audioContext: AudioContext | null;
 }
+
+declare module '@strudel/midi' {
+  // MIDI output - adds .midi() method to Pattern
+  export function midi(outputName?: string): any;
+  export function enableWebMidi(): Promise<void>;
+  // MIDI input - allows receiving MIDI messages as patterns
+  export function midin(options?: { channel?: number }): any;
+}

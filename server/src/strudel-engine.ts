@@ -23,6 +23,20 @@ import { registerSoundfonts, getSoundfontNames } from './soundfonts.js';
 // Import the worklet loader and cleanup function
 import { loadNodeWorklets, cancelScheduledDisconnects } from './audio-polyfill.js';
 
+// Initialize MIDI polyfill BEFORE importing @strudel/midi
+// This provides navigator.requestMIDIAccess using node-midi (RtMidi)
+import { initMidiPolyfill } from './midi-polyfill.js';
+initMidiPolyfill();
+
+// MIDI support - now safe to import since we've polyfilled Web MIDI API
+let strudelMidi: typeof import('@strudel/midi') | null = null;
+try {
+  strudelMidi = await import('@strudel/midi');
+  console.log('[strudel-engine] MIDI module loaded');
+} catch (err) {
+  console.log('[strudel-engine] MIDI support not available:', err instanceof Error ? err.message : err);
+}
+
 // Track different types of sounds separately
 const synthSounds: Set<string> = new Set();      // Synth waveforms (sine, saw, etc.)
 const sampleBanks: Set<string> = new Set();      // Bank names for .bank() (RolandTR808, etc.)
@@ -186,13 +200,20 @@ async function trackSampleNames(
 // Initialize the Strudel scope with all the goodies
 // Include our samples() wrapper so users can load custom samples in their patterns
 // Also expose hush() and setcps() for REPL-level control from user code
-await evalScope(
+const scopeModules: any[] = [
   core,
   mini,
   tonal,
   import('@strudel/core'),
   { samples, hush, setcps }, // Expose our wrappers to user code
-);
+];
+
+// Add MIDI module to scope if it loaded successfully
+if (strudelMidi) {
+  scopeModules.push(strudelMidi);
+}
+
+await evalScope(...scopeModules);
 
 // Register stub visualizer methods on Pattern.prototype
 // These are no-ops in Node.js since we can't render to a canvas

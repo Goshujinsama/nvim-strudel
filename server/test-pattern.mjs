@@ -172,10 +172,9 @@ if (useOsc) {
 }
 
 console.log('Evaluating pattern...');
-try {
-  await engine.eval(code);
-} catch (e) {
-  console.error(`Evaluation error: ${e.message}`);
+const result = await engine.eval(code);
+if (!result.success) {
+  console.error(`Evaluation error: ${result.error}`);
   if (superDirtLauncher) superDirtLauncher.stop();
   engine.dispose();
   process.exit(1);
@@ -183,7 +182,13 @@ try {
 
 const modeStr = useOsc ? 'OSC/SuperDirt' : 'WebAudio';
 console.log(`Playing for ${duration} seconds via ${modeStr}...`);
-engine.play();
+const started = engine.play();
+if (!started) {
+  console.error('No pattern to play');
+  if (superDirtLauncher) superDirtLauncher.stop();
+  engine.dispose();
+  process.exit(1);
+}
 
 // Play for specified duration
 await new Promise(r => setTimeout(r, duration * 1000));
