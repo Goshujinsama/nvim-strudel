@@ -26,7 +26,7 @@ initAudioPolyfill();
 // Using dynamic imports to ensure the polyfill runs first
 const { StrudelTcpServer } = await import('./tcp-server.js');
 const { StrudelEngine, enableOscSampleLoading } = await import('./strudel-engine.js');
-import { SuperDirtLauncher, isJackRunning, startJack } from './superdirt-launcher.js';
+import { SuperDirtLauncher, isJackRunning, startJack, stopJack } from './superdirt-launcher.js';
 import { getOscPort } from './osc-output.js';
 import { initSampleManager, setupOscPort } from './sample-manager.js';
 import { platform } from 'os';
@@ -108,6 +108,7 @@ async function main() {
 
   // Auto-start SuperDirt if requested and OSC mode is enabled
   let superDirtLauncher: SuperDirtLauncher | null = null;
+  let weStartedJack = false;
   
   if (autoSuperDirt && useOsc) {
     if (SuperDirtLauncher.isSclangAvailable()) {
@@ -118,7 +119,13 @@ async function main() {
         if (!isJackRunning()) {
           console.log('[strudel-server] JACK not running, attempting to start...');
           // Try common audio devices
-          if (!startJack('hw:1') && !startJack('hw:0')) {
+          let result = startJack('hw:1');
+          if (!result.started) {
+            result = startJack('hw:0');
+          }
+          if (result.started) {
+            weStartedJack = result.weStartedIt;
+          } else {
             console.warn('[strudel-server] Could not auto-start JACK - start it manually');
           }
         }
@@ -330,6 +337,15 @@ async function main() {
     if (superDirtLauncher) {
       try {
         superDirtLauncher.stop();
+      } catch (e) {
+        // Ignore errors
+      }
+    }
+    
+    // Stop JACK if we started it
+    if (weStartedJack) {
+      try {
+        stopJack();
       } catch (e) {
         // Ignore errors
       }

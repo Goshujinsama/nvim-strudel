@@ -416,15 +416,16 @@ export function isJackRunning(): boolean {
 /**
  * Start JACK with default settings (Linux only)
  * Prefers jack_control (DBus) if available, falls back to jackd
+ * Returns { started: boolean, weStartedIt: boolean }
  */
-export function startJack(device = 'hw:0'): boolean {
+export function startJack(device = 'hw:0'): { started: boolean; weStartedIt: boolean } {
   if (platform() !== 'linux') {
-    return true;
+    return { started: true, weStartedIt: false };
   }
 
   if (isJackRunning()) {
     console.log('[jack] JACK is already running');
-    return true;
+    return { started: true, weStartedIt: false };
   }
 
   console.log('[jack] Attempting to start JACK...');
@@ -447,7 +448,7 @@ export function startJack(device = 'hw:0'): boolean {
       execSync('sleep 1');
       if (isJackRunning()) {
         console.log('[jack] JACK started via DBus');
-        return true;
+        return { started: true, weStartedIt: true };
       }
     }
   } catch {
@@ -468,13 +469,47 @@ export function startJack(device = 'hw:0'): boolean {
     
     if (isJackRunning()) {
       console.log('[jack] JACK started via jackd');
-      return true;
+      return { started: true, weStartedIt: true };
     } else {
       console.error('[jack] JACK failed to start');
-      return false;
+      return { started: false, weStartedIt: false };
     }
   } catch (err) {
     console.error('[jack] Failed to start JACK:', err);
-    return false;
+    return { started: false, weStartedIt: false };
+  }
+}
+
+/**
+ * Stop JACK (Linux only)
+ * Use jack_control if available, otherwise pkill jackd
+ */
+export function stopJack(): void {
+  if (platform() !== 'linux') {
+    return;
+  }
+
+  if (!isJackRunning()) {
+    return;
+  }
+
+  console.log('[jack] Stopping JACK...');
+  
+  // Method 1: Try jack_control (DBus)
+  try {
+    execSync('jack_control stop 2>&1', { timeout: 5000, stdio: 'ignore' });
+    console.log('[jack] JACK stopped via DBus');
+    return;
+  } catch {
+    // jack_control failed
+  }
+  
+  // Method 2: Kill jackd directly
+  try {
+    execSync('pkill -x jackd 2>/dev/null || true', { stdio: 'ignore' });
+    execSync('pkill -x jackdbus 2>/dev/null || true', { stdio: 'ignore' });
+    console.log('[jack] JACK killed via pkill');
+  } catch {
+    // Ignore errors
   }
 }
