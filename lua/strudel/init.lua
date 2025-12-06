@@ -46,6 +46,18 @@ local function get_server_cmd()
       end
     end
 
+    -- Add logging configuration
+    if config.log and config.log.enabled then
+      local log_dir = config.log.path and vim.fn.fnamemodify(config.log.path, ':h') or vim.fn.stdpath('state')
+      local server_log_path = log_dir .. '/strudel-server.log'
+      table.insert(cmd, '--log')
+      table.insert(cmd, server_log_path)
+      if config.log.level then
+        table.insert(cmd, '--log-level')
+        table.insert(cmd, config.log.level)
+      end
+    end
+
     return cmd
   end
 
@@ -78,6 +90,13 @@ function M.setup(opts)
   -- Initialize pianoroll (registers callbacks for auto-show behavior)
   require('strudel.pianoroll').init()
 
+  -- Register error handler to show server errors
+  local client = require('strudel.client')
+  local utils = require('strudel.utils')
+  client.on('error', function(msg)
+    utils.error('Server error: ' .. (msg.message or 'Unknown error'))
+  end)
+
   -- Store server command for later use
   M._server_cmd = get_server_cmd
 
@@ -90,6 +109,9 @@ function M.setup(opts)
     callback = function()
       local client = require('strudel.client')
       local utils = require('strudel.utils')
+      
+      -- Close log file
+      utils.close_log()
       
       -- Disconnect TCP client - this triggers server's "all clients disconnected" handler
       if client.is_connected() then

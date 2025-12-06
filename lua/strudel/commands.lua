@@ -7,6 +7,7 @@ local M = {}
 function M.setup()
   local client = require('strudel.client')
   local picker = require('strudel.picker')
+  local visualizer = require('strudel.visualizer')
 
   -- Track which buffers have been evaluated
   local evaluated_buffers = {}
@@ -61,6 +62,8 @@ function M.setup()
     local code = table.concat(lines, '\n')
     client.eval(code, bufnr)
     evaluated_buffers[bufnr] = true
+    -- Tell visualizer which buffer should receive highlights
+    visualizer.set_evaluated_buffer(bufnr)
     return true
   end
 
@@ -125,6 +128,8 @@ function M.setup()
 
       client.eval(code, bufnr)
       evaluated_buffers[bufnr] = true
+      -- Tell visualizer which buffer should receive highlights
+      visualizer.set_evaluated_buffer(bufnr)
       utils.log('Evaluating...')
     end
 
@@ -288,6 +293,43 @@ function M.setup()
       end)
     end,
     desc = 'Stop Strudel playback when no strudel windows remain',
+  })
+
+  -- :StrudelLog - Open log file
+  vim.api.nvim_create_user_command('StrudelLog', function(opts)
+    local log_path = utils.get_log_path()
+    if log_path then
+      local arg = opts.args or ''
+      if arg == 'server' then
+        -- Open server log
+        local server_log = vim.fn.fnamemodify(log_path, ':h') .. '/strudel-server.log'
+        if vim.fn.filereadable(server_log) == 1 then
+          vim.cmd('edit ' .. vim.fn.fnameescape(server_log))
+        else
+          utils.warn('Server log not found: ' .. server_log)
+        end
+      elseif arg == 'client' or arg == '' then
+        -- Open client log (default)
+        vim.cmd('edit ' .. vim.fn.fnameescape(log_path))
+      elseif arg == 'both' then
+        -- Open both in splits
+        vim.cmd('edit ' .. vim.fn.fnameescape(log_path))
+        local server_log = vim.fn.fnamemodify(log_path, ':h') .. '/strudel-server.log'
+        if vim.fn.filereadable(server_log) == 1 then
+          vim.cmd('vsplit ' .. vim.fn.fnameescape(server_log))
+        end
+      else
+        utils.warn('Unknown argument: ' .. arg .. ' (use: client, server, both)')
+      end
+    else
+      utils.warn('Logging is not enabled. Set log.enabled = true in config.')
+    end
+  end, {
+    nargs = '?',
+    complete = function()
+      return { 'client', 'server', 'both' }
+    end,
+    desc = 'Open Strudel log file (client/server/both)',
   })
 
   utils.debug('Commands registered')

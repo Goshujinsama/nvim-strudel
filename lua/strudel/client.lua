@@ -53,6 +53,7 @@ end
 ---@param data string
 local function on_data(data)
   state.buffer = state.buffer .. data
+  utils.info('Received raw data: ' .. data:gsub('\n', '\\n'))
 
   -- Messages are newline-delimited JSON
   while true do
@@ -66,8 +67,11 @@ local function on_data(data)
 
     local msg = parse_message(line)
     if msg and msg.type then
+      utils.info('Parsed message type: ' .. msg.type .. ' data: ' .. vim.inspect(msg):sub(1, 200))
       utils.debug('Received message: ' .. msg.type)
       emit(msg.type, msg)
+    else
+      utils.info('Failed to parse message: ' .. line:sub(1, 100))
     end
   end
 end
@@ -185,6 +189,7 @@ function M.send(msg)
   end
 
   local data = vim.json.encode(msg) .. '\n'
+  utils.info('Sending message: ' .. msg.type .. ' data: ' .. data:sub(1, 200):gsub('\n', '\\n'))
 
   state.handle:write(data, function(err)
     if err then

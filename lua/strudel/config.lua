@@ -28,6 +28,11 @@
 ---@field display_cycles number Number of cycles to show
 ---@field mode 'auto'|'tracks'|'notes' Visualization mode
 
+---@class StrudelLogConfig
+---@field enabled boolean Enable file logging
+---@field path? string Custom log path (default: XDG state dir)
+---@field level 'debug'|'info'|'warn'|'error' Minimum log level
+
 ---@class StrudelConfig
 ---@field server StrudelServerConfig
 ---@field highlight StrudelHighlightConfig
@@ -35,6 +40,7 @@
 ---@field lsp StrudelLspConfig
 ---@field audio StrudelAudioConfig
 ---@field pianoroll StrudelPianorollConfig
+---@field log StrudelLogConfig
 ---@field picker 'auto'|'snacks'|'telescope'
 ---@field auto_eval boolean
 ---@field filetypes string[]
@@ -70,6 +76,11 @@ M.defaults = {
     height = 10,              -- Height of pianoroll window
     display_cycles = 2,       -- Number of cycles to show
     mode = 'auto',            -- 'auto', 'tracks', or 'notes' (braille)
+  },
+  log = {
+    enabled = false,          -- Enable file logging
+    path = nil,               -- Custom path (default: ~/.local/state/nvim/strudel.log)
+    level = 'debug',          -- Minimum log level: 'debug', 'info', 'warn', 'error'
   },
   picker = 'auto',
   auto_eval = false,

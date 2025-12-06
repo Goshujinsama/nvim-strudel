@@ -1,5 +1,104 @@
 local M = {}
 
+-- Log levels for filtering
+local LOG_LEVELS = {
+  debug = 1,
+  info = 2,
+  warn = 3,
+  error = 4,
+}
+
+-- Log file handle (lazy initialized)
+local log_file = nil
+local log_path = nil
+
+---Get the default log path (XDG state directory)
+---@return string
+local function get_default_log_path()
+  local state_dir = vim.fn.stdpath('state')
+  return state_dir .. '/strudel.log'
+end
+
+---Initialize log file if logging is enabled
+---@return file*|nil
+local function get_log_file()
+  local config = require('strudel.config').get()
+  if not config.log or not config.log.enabled then
+    return nil
+  end
+
+  -- Already opened
+  if log_file then
+    return log_file
+  end
+
+  -- Determine path
+  log_path = config.log.path or get_default_log_path()
+
+  -- Ensure parent directory exists
+  local parent = vim.fn.fnamemodify(log_path, ':h')
+  if vim.fn.isdirectory(parent) == 0 then
+    vim.fn.mkdir(parent, 'p')
+  end
+
+  -- Open file in append mode
+  local f, err = io.open(log_path, 'a')
+  if not f then
+    vim.notify('[strudel] Failed to open log file: ' .. (err or 'unknown error'), vim.log.levels.ERROR)
+    return nil
+  end
+
+  log_file = f
+
+  -- Write session header
+  log_file:write('\n--- Strudel session started: ' .. os.date('%Y-%m-%d %H:%M:%S') .. ' ---\n')
+  log_file:flush()
+
+  return log_file
+end
+
+---Write to log file if enabled
+---@param level string Log level name
+---@param msg string Message to log
+local function write_log(level, msg)
+  local f = get_log_file()
+  if not f then
+    return
+  end
+
+  local config = require('strudel.config').get()
+  local min_level = config.log and config.log.level or 'debug'
+
+  -- Filter by level
+  if LOG_LEVELS[level] < LOG_LEVELS[min_level] then
+    return
+  end
+
+  local timestamp = os.date('%H:%M:%S')
+  local line = string.format('[%s] [%s] %s\n', timestamp, level:upper(), msg)
+  f:write(line)
+  f:flush()
+end
+
+---Close log file (call on exit)
+function M.close_log()
+  if log_file then
+    log_file:write('--- Session ended: ' .. os.date('%Y-%m-%d %H:%M:%S') .. ' ---\n')
+    log_file:close()
+    log_file = nil
+  end
+end
+
+---Get the current log file path
+---@return string|nil
+function M.get_log_path()
+  local config = require('strudel.config').get()
+  if config.log and config.log.enabled then
+    return config.log.path or get_default_log_path()
+  end
+  return nil
+end
+
 ---Get the root path of the plugin
 ---@return string
 function M.get_plugin_root()
@@ -15,6 +114,16 @@ end
 function M.log(msg, level)
   level = level or vim.log.levels.INFO
   vim.notify('[strudel] ' .. msg, level)
+  -- Also write to file
+  local level_name = 'info'
+  if level == vim.log.levels.DEBUG then
+    level_name = 'debug'
+  elseif level == vim.log.levels.WARN then
+    level_name = 'warn'
+  elseif level == vim.log.levels.ERROR then
+    level_name = 'error'
+  end
+  write_log(level_name, msg)
 end
 
 ---Log an error message
@@ -32,9 +141,18 @@ end
 ---Log a debug message (only if debug mode is enabled)
 ---@param msg string
 function M.debug(msg)
+  -- Always write to log file if enabled
+  write_log('debug', msg)
+  -- Only show in Neovim if debug mode is on
   if vim.g.strudel_debug then
     M.log('[DEBUG] ' .. msg, vim.log.levels.DEBUG)
   end
+end
+
+---Log info message (for file logging without notification)
+---@param msg string
+function M.info(msg)
+  write_log('info', msg)
 end
 
 ---Check if a module is available

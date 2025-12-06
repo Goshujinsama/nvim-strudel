@@ -10,6 +10,9 @@ local ns_id = nil
 ---@type table<number, number[]> Buffer ID -> extmark IDs
 local extmarks = {}
 
+---@type number? The buffer that was last evaluated (where highlights should go)
+local evaluated_bufnr = nil
+
 ---Get or create the namespace
 ---@return number
 local function get_namespace()
@@ -36,6 +39,19 @@ function M.clear_all()
     end
   end
   extmarks = {}
+end
+
+---Set the buffer that should receive highlights
+---@param bufnr number
+function M.set_evaluated_buffer(bufnr)
+  evaluated_bufnr = bufnr
+  utils.debug('Visualizer: evaluated buffer set to ' .. bufnr)
+end
+
+---Get the currently evaluated buffer
+---@return number?
+function M.get_evaluated_buffer()
+  return evaluated_bufnr
 end
 
 ---Highlight active elements in a buffer
@@ -100,10 +116,11 @@ function M.setup()
   client.on('active', function(msg)
     utils.debug('Visualizer received active event with ' .. #(msg.elements or {}) .. ' elements')
     local elements = msg.elements or {}
-    -- For now, apply to current buffer
-    -- TODO: Support multiple buffers based on bufnr in message
-    local bufnr = vim.api.nvim_get_current_buf()
-    M.highlight_active(bufnr, elements)
+    -- Only apply highlights to the buffer that was evaluated
+    -- This prevents highlights from appearing in unrelated buffers
+    if evaluated_bufnr and vim.api.nvim_buf_is_valid(evaluated_bufnr) then
+      M.highlight_active(evaluated_bufnr, elements)
+    end
   end)
 
   -- Clear highlights when disconnected

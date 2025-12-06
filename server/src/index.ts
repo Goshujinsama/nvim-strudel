@@ -15,7 +15,11 @@
  *   --osc-port <port>     SuperDirt OSC port (default: 57120)
  *   --no-auto-superdirt   Don't auto-start SuperDirt (assumes it's already running)
  *   --superdirt-verbose   Show SuperCollider output
+ *   --log <path>          Write logs to file
+ *   --log-level <level>   Minimum log level: debug, info, warn, error (default: debug)
  */
+
+import * as fs from 'fs';
 
 // Step 1: Initialize audio polyfill (static import is OK here since audio-polyfill
 // doesn't import superdough)
@@ -36,6 +40,69 @@ const DEFAULT_HOST = '127.0.0.1';
 const DEFAULT_OSC_HOST = '127.0.0.1';
 const DEFAULT_OSC_PORT = 57120;
 
+// Logging infrastructure
+let logFile: fs.WriteStream | null = null;
+let logLevel: 'debug' | 'info' | 'warn' | 'error' = 'debug';
+const LOG_LEVELS: Record<string, number> = { debug: 1, info: 2, warn: 3, error: 4 };
+
+function initLogging(logPath: string, level: string): void {
+  logLevel = (level as typeof logLevel) || 'debug';
+  
+  // Ensure parent directory exists
+  const dir = logPath.substring(0, logPath.lastIndexOf('/'));
+  if (dir && !fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  
+  logFile = fs.createWriteStream(logPath, { flags: 'a' });
+  logFile.write(`\n--- Strudel server session started: ${new Date().toISOString()} ---\n`);
+  console.log(`[strudel-server] Logging to: ${logPath}`);
+}
+
+function closeLogging(): void {
+  if (logFile) {
+    logFile.write(`--- Session ended: ${new Date().toISOString()} ---\n`);
+    logFile.end();
+    logFile = null;
+  }
+}
+
+function writeLog(level: string, msg: string): void {
+  if (!logFile) return;
+  if (LOG_LEVELS[level] < LOG_LEVELS[logLevel]) return;
+  
+  const timestamp = new Date().toISOString().substring(11, 19);
+  logFile.write(`[${timestamp}] [${level.toUpperCase()}] ${msg}\n`);
+}
+
+// Wrap console methods to also write to log file
+const originalConsoleLog = console.log;
+const originalConsoleWarn = console.warn;
+const originalConsoleError = console.error;
+
+console.log = (...args: any[]) => {
+  originalConsoleLog(...args);
+  writeLog('info', args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' '));
+};
+
+console.warn = (...args: any[]) => {
+  originalConsoleWarn(...args);
+  writeLog('warn', args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' '));
+};
+
+console.error = (...args: any[]) => {
+  originalConsoleError(...args);
+  writeLog('error', args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' '));
+};
+
+// Export for other modules to use
+export function serverLog(level: 'debug' | 'info' | 'warn' | 'error', msg: string): void {
+  writeLog(level, msg);
+  if (level === 'debug' && LOG_LEVELS[level] >= LOG_LEVELS[logLevel]) {
+    originalConsoleLog(`[debug] ${msg}`);
+  }
+}
+
 /**
  * Parse command-line arguments
  */
@@ -47,6 +114,8 @@ function parseArgs(): {
   oscPort: number;
   autoSuperDirt: boolean;
   superDirtVerbose: boolean;
+  logPath: string | null;
+  logLevel: string;
 } {
   const args = process.argv.slice(2);
   const result = {
@@ -57,6 +126,8 @@ function parseArgs(): {
     oscPort: DEFAULT_OSC_PORT,
     autoSuperDirt: true, // Default to true, --osc will use this
     superDirtVerbose: false,
+    logPath: null as string | null,
+    logLevel: 'debug',
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -83,6 +154,15 @@ function parseArgs(): {
       case '--superdirt-verbose':
         result.superDirtVerbose = true;
         break;
+      case '--auto-superdirt':
+        result.autoSuperDirt = true;
+        break;
+      case '--log':
+        result.logPath = args[++i];
+        break;
+      case '--log-level':
+        result.logLevel = args[++i];
+        break;
     }
   }
 
@@ -91,6 +171,11 @@ function parseArgs(): {
 
 async function main() {
   const args = parseArgs();
+  
+  // Initialize logging if requested
+  if (args.logPath) {
+    initLogging(args.logPath, args.logLevel);
+  }
   
   const config: ServerConfig = {
     port: args.port,
@@ -167,6 +252,9 @@ async function main() {
       // Ignore errors during stop
     }
     
+    // Close log file
+    closeLogging();
+    
     console.log('[strudel-server] Shutdown complete');
     process.exit(0);
   };
@@ -225,17 +313,22 @@ async function main() {
   // Handle client messages
   server.onMessage(async (msg, ws) => {
     console.log('[strudel-server] Received message:', msg.type);
+    serverLog('debug', `Message received: ${msg.type}`);
 
     switch (msg.type) {
       case 'eval': {
+        serverLog('debug', `Eval code (${msg.code?.length || 0} chars): ${msg.code?.substring(0, 200)}...`);
         const result = await engine.eval(msg.code);
+        serverLog('debug', `Eval result: success=${result.success}, error=${result.error || 'none'}`);
         if (!result.success) {
+          serverLog('warn', `Eval error: ${result.error}`);
           server.send(ws, {
             type: 'error',
             message: result.error || 'Evaluation failed',
           });
         } else {
           const state = engine.getState();
+          serverLog('debug', `Eval success, state: playing=${state.playing}, cps=${state.cps}`);
           server.send(ws, {
             type: 'status',
             ...state,

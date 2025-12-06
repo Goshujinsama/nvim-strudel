@@ -577,6 +577,7 @@ export class StrudelEngine {
       defaultOutput: async (hap: any, deadline: number, duration: number, cps: number, t: number): Promise<void> => {
         // IMPORTANT: Don't await superdough - fire and forget for tight timing
         // The Web Audio API handles scheduling internally via absoluteTime
+        console.log(`[strudel-engine] defaultOutput called: s=${hap.value?.s} webAudio=${this.webAudioEnabled} osc=${this.oscEnabled} oscConnected=${isOscConnected()}`);
         
         // Play sound via superdough (Web Audio)
         if (this.webAudioEnabled) {
@@ -595,6 +596,8 @@ export class StrudelEngine {
         // Pass 't' (target time in AudioContext seconds) for proper scheduling
         if (this.oscEnabled && isOscConnected()) {
           sendHapToSuperDirt(hap, t, cps);
+        } else if (this.oscEnabled) {
+          console.log('[strudel-engine] OSC enabled but not connected, skipping hap');
         }
         
         // Defer visualization work to avoid blocking audio scheduling
