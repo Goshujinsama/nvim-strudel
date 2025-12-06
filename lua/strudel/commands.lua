@@ -246,19 +246,20 @@ function M.setup()
   -- Setup handlers to stop playback when strudel buffer is closed
   local wipeout_group = vim.api.nvim_create_augroup('StrudelBufWipeout', { clear = true })
   
-  -- Helper to check if any window is showing an evaluated buffer
-  local function has_evaluated_buffer_window()
-    for _, win in ipairs(vim.api.nvim_list_wins()) do
-      local buf = vim.api.nvim_win_get_buf(win)
-      if evaluated_buffers[buf] then
+  -- Helper to check if any evaluated buffer still exists and is valid
+  local function has_valid_evaluated_buffer()
+    for bufnr, _ in pairs(evaluated_buffers) do
+      if vim.api.nvim_buf_is_valid(bufnr) then
         return true
       end
     end
     return false
   end
   
-  -- Stop when buffer is wiped or deleted
-  vim.api.nvim_create_autocmd({ 'BufWipeout', 'BufDelete' }, {
+  -- Stop when buffer is wiped (fully destroyed, not just unloaded)
+  -- Note: We only use BufWipeout, not BufDelete, because BufDelete fires
+  -- when buffers are unloaded (e.g., by oil.nvim) but the buffer may still exist
+  vim.api.nvim_create_autocmd('BufWipeout', {
     group = wipeout_group,
     callback = function(args)
       if evaluated_buffers[args.buf] then
@@ -277,22 +278,22 @@ function M.setup()
         end
       end
     end,
-    desc = 'Stop Strudel playback when buffer is wiped or deleted',
+    desc = 'Stop Strudel playback when buffer is wiped',
   })
   
-  -- Stop when window is closed and no windows with evaluated buffers remain
+  -- Stop when window is closed and no evaluated buffers remain valid
   vim.api.nvim_create_autocmd('WinClosed', {
     group = wipeout_group,
     callback = function(args)
       -- Defer to let the window actually close first
       vim.schedule(function()
-        if not has_evaluated_buffer_window() and client.is_connected() then
+        if not has_valid_evaluated_buffer() and client.is_connected() then
           client.stop()
-          utils.debug('No strudel windows remain, stopping playback')
+          utils.debug('No valid evaluated buffers remain, stopping playback')
         end
       end)
     end,
-    desc = 'Stop Strudel playback when no strudel windows remain',
+    desc = 'Stop Strudel playback when no evaluated buffers remain',
   })
 
   -- :StrudelLog - Open log file
