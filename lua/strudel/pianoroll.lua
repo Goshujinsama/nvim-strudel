@@ -204,7 +204,7 @@ local function render_braille_notes(notes, note_range, width, phase)
 
       for sub_row = 1, 4 do
         local note_idx = (base_note - (sub_row - 1)) - min_note
-        if note_idx >= 0 and note_idx < note_count then
+        if note_idx >= 0 and note_idx < note_count and grid[note_idx] then
           -- Left column (t0)
           if grid[note_idx][t0] then
             braille_grid[1][sub_row] = true
