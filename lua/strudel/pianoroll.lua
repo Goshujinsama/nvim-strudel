@@ -329,6 +329,12 @@ local function setup_highlights()
     default = true,
     link = 'Comment',
   })
+  
+  -- Hidden cursor for pianoroll window (invisible)
+  vim.api.nvim_set_hl(0, 'StrudelPianoCursorHidden', {
+    default = true,
+    blend = 100,  -- Fully transparent
+  })
 end
 
 ---Get the current window width
@@ -952,7 +958,12 @@ show_window = function()
   vim.api.nvim_set_option_value('signcolumn', 'no', { win = state.winid })
   vim.api.nvim_set_option_value('winfixheight', true, { win = state.winid })
   vim.api.nvim_set_option_value('cursorline', false, { win = state.winid })
+  vim.api.nvim_set_option_value('cursorcolumn', false, { win = state.winid })
   vim.api.nvim_set_option_value('wrap', false, { win = state.winid })
+  
+  -- Hide cursor in pianoroll by using a blank cursor highlight
+  -- This prevents visual artifacts from cursor position during rapid updates
+  vim.api.nvim_set_option_value('winhighlight', 'Cursor:StrudelPianoCursorHidden,TermCursor:StrudelPianoCursorHidden', { win = state.winid })
 
   -- Return to original window
   vim.api.nvim_set_current_win(current_win)
