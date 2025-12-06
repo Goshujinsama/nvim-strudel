@@ -967,13 +967,14 @@ export class StrudelEngine {
         }
 
         // Normalize times to 0-1 within display window
-        const hapStart = hap.whole?.begin?.valueOf() ?? hap.part.begin.valueOf();
-        const hapEnd = hap.whole?.end?.valueOf() ?? hap.part.end.valueOf();
+        // Use hap.part for visualization (the actual triggering time, not the full sustain duration)
+        const hapStart = hap.part.begin.valueOf();
+        const hapEnd = hap.part.end.valueOf();
 
         const normalizedStart = (hapStart - windowStart) / displayCycles;
         const normalizedEnd = (hapEnd - windowStart) / displayCycles;
 
-        // Check if this hap is currently active
+        // Check if this hap is currently active (use part for precise timing)
         const isActive = currentCycle >= hapStart && currentCycle < hapEnd;
 
         const event: VisualizationEvent = {
