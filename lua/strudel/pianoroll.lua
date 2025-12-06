@@ -337,6 +337,19 @@ local function setup_highlights()
   })
 end
 
+---Fix cursor position in pianoroll window to prevent visual artifacts
+---The cursor can appear to bounce around during rapid updates; fixing it
+---to position 1,1 keeps it hidden in the border area
+local function fix_cursor_position()
+  if state.winid and vim.api.nvim_win_is_valid(state.winid) then
+    -- Only set cursor if this window has our buffer
+    local win_buf = vim.api.nvim_win_get_buf(state.winid)
+    if win_buf == state.bufnr then
+      vim.api.nvim_win_set_cursor(state.winid, { 1, 0 })
+    end
+  end
+end
+
 ---Get the current window width
 ---@return number
 local function get_window_width()
@@ -548,6 +561,7 @@ render_braille = function(cycle, phase, width)
   vim.api.nvim_set_option_value('modifiable', true, { buf = state.bufnr })
   vim.api.nvim_buf_set_lines(state.bufnr, 0, -1, false, lines)
   vim.api.nvim_set_option_value('modifiable', false, { buf = state.bufnr })
+  fix_cursor_position()
 
   -- Clear old highlights
   vim.api.nvim_buf_clear_namespace(state.bufnr, state.ns_id, 0, -1)
@@ -691,6 +705,7 @@ render_drums = function(tracks, cycle, phase, width)
   vim.api.nvim_set_option_value('modifiable', true, { buf = state.bufnr })
   vim.api.nvim_buf_set_lines(state.bufnr, 0, -1, false, lines)
   vim.api.nvim_set_option_value('modifiable', false, { buf = state.bufnr })
+  fix_cursor_position()
 
   -- Clear old highlights
   vim.api.nvim_buf_clear_namespace(state.bufnr, state.ns_id, 0, -1)
@@ -800,6 +815,7 @@ render_tracks = function(tracks, cycle, phase, width)
   vim.api.nvim_set_option_value('modifiable', true, { buf = state.bufnr })
   vim.api.nvim_buf_set_lines(state.bufnr, 0, -1, false, lines)
   vim.api.nvim_set_option_value('modifiable', false, { buf = state.bufnr })
+  fix_cursor_position()
 
   -- Clear old highlights
   vim.api.nvim_buf_clear_namespace(state.bufnr, state.ns_id, 0, -1)
