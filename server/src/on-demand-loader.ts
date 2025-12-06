@@ -476,10 +476,15 @@ export async function loadSoundsForCode(code: string): Promise<string[]> {
   
   if (loaded.length > 0) {
     console.log(`[on-demand] Loaded ${loaded.length} sounds: ${loaded.join(', ')}`);
-    // Notify SuperDirt to reload the sample folders
-    notifySuperDirtLoadSamples(getCacheDir(), 0);
   } else {
     console.log('[on-demand] All sounds already cached or not loadable');
+  }
+  
+  // Always notify SuperDirt to load samples when we detected sounds that need it
+  // This ensures cached soundfonts are loaded even if they weren't newly downloaded
+  const soundfontsDetected = Array.from(soundNames).filter(name => isGmSoundfont(name));
+  if (soundfontsDetected.length > 0 || loaded.length > 0) {
+    notifySuperDirtLoadSamples(getCacheDir(), 0);
   }
   
   return loaded;
