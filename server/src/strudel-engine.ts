@@ -974,8 +974,15 @@ export class StrudelEngine {
         const normalizedStart = (hapStart - windowStart) / displayCycles;
         const normalizedEnd = (hapEnd - windowStart) / displayCycles;
 
-        // Check if this hap is currently active (use part for precise timing)
-        const isActive = currentCycle >= hapStart && currentCycle < hapEnd;
+        // Check if this hap is currently active AND the active portion is visible in the window
+        // This prevents spurious highlights from notes that are mostly outside the visible area
+        const isActive = currentCycle >= hapStart && currentCycle < hapEnd &&
+                         normalizedStart < 1 && normalizedEnd > 0;
+
+        // Skip events that are completely outside the visible window
+        if (normalizedEnd <= 0 || normalizedStart >= 1) {
+          continue;
+        }
 
         const event: VisualizationEvent = {
           start: Math.max(0, normalizedStart),
