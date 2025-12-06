@@ -350,29 +350,17 @@ local function fix_cursor_position()
   end
 end
 
----Update buffer content atomically to minimize cursor flicker
+---Update buffer content with minimal cursor flicker
 ---@param lines string[]
 local function update_buffer_content(lines)
   if not state.bufnr or not vim.api.nvim_buf_is_valid(state.bufnr) then
     return
   end
   
-  -- Use nvim_call_atomic to batch operations and minimize intermediate redraws
-  local calls = {
-    { 'nvim_set_option_value', { 'modifiable', true, { buf = state.bufnr } } },
-    { 'nvim_buf_set_lines', { state.bufnr, 0, -1, false, lines } },
-    { 'nvim_set_option_value', { 'modifiable', false, { buf = state.bufnr } } },
-  }
-  
-  -- Add cursor fix if window is valid
-  if state.winid and vim.api.nvim_win_is_valid(state.winid) then
-    local win_buf = vim.api.nvim_win_get_buf(state.winid)
-    if win_buf == state.bufnr then
-      table.insert(calls, { 'nvim_win_set_cursor', { state.winid, { 1, 0 } } })
-    end
-  end
-  
-  vim.api.nvim_call_atomic(calls)
+  vim.api.nvim_set_option_value('modifiable', true, { buf = state.bufnr })
+  vim.api.nvim_buf_set_lines(state.bufnr, 0, -1, false, lines)
+  vim.api.nvim_set_option_value('modifiable', false, { buf = state.bufnr })
+  fix_cursor_position()
 end
 
 ---Get the current window width
@@ -608,6 +596,9 @@ render_braille = function(cycle, phase, width)
   end
   vim.api.nvim_buf_add_highlight(state.bufnr, state.ns_id, 'StrudelPianoBorder', 0, 0, -1)
   vim.api.nvim_buf_add_highlight(state.bufnr, state.ns_id, 'StrudelPianoBorder', #lines - 1, 0, -1)
+  
+  -- Final cursor fix after all updates
+  fix_cursor_position()
 end
 
 ---Render in drums braille mode (group 4 tracks per braille row)
@@ -749,6 +740,9 @@ render_drums = function(tracks, cycle, phase, width)
   end
   vim.api.nvim_buf_add_highlight(state.bufnr, state.ns_id, 'StrudelPianoBorder', 0, 0, -1)
   vim.api.nvim_buf_add_highlight(state.bufnr, state.ns_id, 'StrudelPianoBorder', #lines - 1, 0, -1)
+  
+  -- Final cursor fix after all updates
+  fix_cursor_position()
 end
 
 ---Render in track mode (original behavior)
@@ -859,6 +853,9 @@ render_tracks = function(tracks, cycle, phase, width)
   end
   vim.api.nvim_buf_add_highlight(state.bufnr, state.ns_id, 'StrudelPianoBorder', 0, 0, -1)
   vim.api.nvim_buf_add_highlight(state.bufnr, state.ns_id, 'StrudelPianoBorder', #lines - 1, 0, -1)
+  
+  -- Final cursor fix after all updates
+  fix_cursor_position()
 end
 
 ---Handle visualization data from server
