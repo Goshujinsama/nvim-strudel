@@ -799,10 +799,7 @@ render_tracks = function(tracks, cycle, phase, width)
   end
 
   -- Update buffer
-  vim.api.nvim_set_option_value('modifiable', true, { buf = state.bufnr })
-  vim.api.nvim_buf_set_lines(state.bufnr, 0, -1, false, lines)
-  vim.api.nvim_set_option_value('modifiable', false, { buf = state.bufnr })
-  fix_cursor_position()
+  update_buffer_content(lines)
 
   -- Clear old highlights
   vim.api.nvim_buf_clear_namespace(state.bufnr, state.ns_id, 0, -1)
