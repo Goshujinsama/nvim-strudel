@@ -394,9 +394,12 @@ local function apply_highlights_batched(highlights, lines)
     })
   end
 
-  -- Execute all highlights in one atomic call
-  if #calls > 0 then
-    vim.api.nvim_call_atomic(calls)
+  -- Apply all highlights
+  for _, call in ipairs(calls) do
+    local ok, err = pcall(vim.api.nvim_buf_add_highlight, unpack(call[2]))
+    if not ok then
+      -- Silently ignore highlight errors (e.g., invalid positions)
+    end
   end
 end
 
