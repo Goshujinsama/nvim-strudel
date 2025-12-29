@@ -1,5 +1,6 @@
 import { repl } from '@strudel/core/repl.mjs';
 import { evalScope } from '@strudel/core/evaluate.mjs';
+import { Pattern, silence } from '@strudel/core/pattern.mjs';
 import * as core from '@strudel/core';
 import * as mini from '@strudel/mini';
 import * as tonal from '@strudel/tonal';
@@ -235,11 +236,12 @@ const visualizerMethods = [
   'scope',
 ];
 
-// Use core.Pattern to ensure we modify the same class that s() and other
-// functions use (ESM can treat different import paths as different modules)
-const Pattern = (core as any).Pattern;
-const silence = (core as any).silence;
+// The @strudel/core package has TWO Pattern classes:
+// 1. Pattern from pattern.mjs (source file) - used by repl.mjs
+// 2. Pattern from dist/index.mjs (bundle) - used by s() and other functions
+// We need to set .p() on BOTH to ensure it works everywhere
 const PatternProto = Pattern.prototype as any;
+const BundledPatternProto = (core as any).Pattern.prototype;
 
 for (const method of visualizerMethods) {
   if (!PatternProto[method]) {
@@ -255,10 +257,13 @@ console.log('[strudel-engine] Visualizer stubs registered (pianoroll, punchcard,
 // Register .p() and .q() methods for labeled pattern syntax (gtr: s("bd"))
 // These are normally injected by the REPL, but we need them before first eval
 // pPatterns will be populated by the REPL's own injectPatternMethods later
+// Set .p() and .q() on both Pattern prototypes
+// The REPL's injectPatternMethods will set the real .p() on PatternProto (source Pattern)
+// We make BundledPatternProto delegate to PatternProto so it uses the same .p()
+
+// First, set up stubs on the source Pattern (REPL will override these)
 if (!PatternProto.p) {
   PatternProto.p = function(id: string) {
-    // The REPL will override this with its own implementation that stores patterns
-    // This stub just allows the syntax to work on first eval
     return this;
   };
 }
@@ -267,11 +272,24 @@ if (!PatternProto.q) {
     return silence;
   };
 }
-// Also add d1-d9 and p1-p9 getters for convenience
+
+// Make the bundled Pattern delegate .p() and .q() to the source Pattern
+// This way, when REPL sets PatternProto.p, it affects both Pattern classes
+Object.defineProperty(BundledPatternProto, 'p', {
+  get() { return PatternProto.p; },
+  configurable: true
+});
+Object.defineProperty(BundledPatternProto, 'q', {
+  get() { return PatternProto.q; },
+  configurable: true
+});
+// Also add d1-d9 and p1-p9 getters for convenience (on both Pattern prototypes)
 for (let i = 1; i < 10; i++) {
   const di = `d${i}`;
   const pi = `p${i}`;
   const qi = `q${i}`;
+
+  // Source Pattern
   if (!Object.getOwnPropertyDescriptor(PatternProto, di)) {
     Object.defineProperty(PatternProto, di, {
       get() { return this.p(i); },
@@ -286,6 +304,23 @@ for (let i = 1; i < 10; i++) {
   }
   if (!PatternProto[qi]) {
     PatternProto[qi] = silence;
+  }
+
+  // Bundled Pattern - delegate to source Pattern (use this.p(i) which delegates correctly)
+  if (!Object.getOwnPropertyDescriptor(BundledPatternProto, di)) {
+    Object.defineProperty(BundledPatternProto, di, {
+      get() { return this.p(i); },
+      configurable: true,
+    });
+  }
+  if (!Object.getOwnPropertyDescriptor(BundledPatternProto, pi)) {
+    Object.defineProperty(BundledPatternProto, pi, {
+      get() { return this.p(i); },
+      configurable: true,
+    });
+  }
+  if (!BundledPatternProto[qi]) {
+    BundledPatternProto[qi] = silence;
   }
 }
 console.log('[strudel-engine] Pattern label methods registered (.p(), .q(), .d1-.d9, .p1-.p9)');
