@@ -296,3 +296,4 @@ AGPL-3.0 - Required due to dependency on Strudel libraries.
 
 - [Strudel](https://strudel.cc/) by Felix Roos and contributors
 - [TidalCycles](https://tidalcycles.org/) for the pattern language inspiration
+- Michael Liebenow for the original repo of this fork
