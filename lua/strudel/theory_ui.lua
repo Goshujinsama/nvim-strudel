@@ -136,18 +136,18 @@ local function insert_selected(format)
 
   local text
   if format == 'chord' then
-    text = string.format('chord("%s")', suggestion.strudel)
+    text = suggestion.strudel
   elseif format == 'notes' then
-    text = string.format('note("%s")', suggestion.strudel_notes)
+    text = suggestion.strudel_notes
   elseif format == 'degrees' then
     if suggestion.strudel_degrees then
-      text = string.format('n("%s")', suggestion.strudel_degrees)
+      text = suggestion.strudel_degrees
     else
       -- Fallback to notes if no degrees available
-      text = string.format('note("%s")', suggestion.strudel_notes)
+      text = suggestion.strudel_notes
     end
   else
-    text = string.format('chord("%s")', suggestion.strudel)
+    text = suggestion.strudel
   end
 
   -- Close the popup

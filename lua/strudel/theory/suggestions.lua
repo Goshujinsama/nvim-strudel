@@ -12,7 +12,7 @@ local parser = require('strudel.theory.parser')
 local M = {}
 
 ---@class ChordSuggestion
----@field chord string Full chord name (e.g., "Cmaj7")
+---@field chord string Full chord name (e.g., "CM7")
 ---@field strudel string Strudel chord() notation
 ---@field strudel_notes string Strudel note() notation with notes
 ---@field strudel_degrees string|nil Strudel n() notation with scale degrees (if applicable)

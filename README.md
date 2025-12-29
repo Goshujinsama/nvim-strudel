@@ -174,6 +174,71 @@ The pianoroll provides a visual representation of your pattern. It automatically
 - Supports multiple visualization modes: `auto`, `tracks`, `notes`, `drums`
 - Pattern code using `.pianoroll()` or `.punchcard()` auto-enables visualization
 
+## Music Theory
+
+nvim-strudel includes music theory intelligence that analyzes your patterns and suggests compatible chords.
+
+### Key Detection
+
+Run `:StrudelAnalyze` to detect the key and scale from your patterns:
+
+```javascript
+note("c3 e3 g3 b3")  // Detected: C Major (85% confidence)
+n("0 2 4 5 7")       // Detected: C Major (based on scale degrees)
+chord("<Am7 Dm7 G7 Cmaj7>")  // Detected: C Major (from chord progression)
+```
+
+### Chord Suggestions
+
+Run `:StrudelTheory` to open a floating window with chord suggestions:
+
+```
+┌─ Chord Suggestions ─────────────────┐
+│ C Major (85%) [line]                │
+│─────────────────────────────────────│
+│ j/k:nav  c:chord  n:note  d:deg     │
+│                                     │
+│ ▶ Cmaj7    I (tonic)                │
+│   Dm7      ii (supertonic)          │
+│   Em7      iii (mediant)            │
+│   Fmaj7    IV (subdominant)         │
+│   G7       V (dominant)             │
+│   Am7      vi (submediant)          │
+│   Bm7b5    vii (leading tone)       │
+│   D7       V7/ii (secondary dom)    │
+└─────────────────────────────────────┘
+```
+
+**Floating window keybindings:**
+
+| Key | Action |
+|-----|--------|
+| `j/k` or arrows | Navigate suggestions |
+| `c` or `<CR>` | Insert as `chord("...")` |
+| `n` | Insert as `note("...")` |
+| `d` | Insert as `n("...")` (scale degrees) |
+| `s` | Cycle scope (line → selection → buffer) |
+| `q` or `<Esc>` | Close |
+
+### Scale and Chord Browsers
+
+Browse and insert scales or chords with a picker:
+
+```vim
+:StrudelScales       " Browse all scales (default root: C)
+:StrudelScales G     " Browse scales starting on G
+:StrudelChords       " Browse all chord types (default root: C)
+:StrudelChords F#    " Browse chords with F# root
+```
+
+### Suggested Keymaps
+
+```lua
+vim.keymap.set('n', '<leader>st', '<cmd>StrudelTheory<cr>', { desc = 'Chord suggestions' })
+vim.keymap.set('v', '<leader>st', '<cmd>StrudelTheory selection<cr>', { desc = 'Chord suggestions (selection)' })
+vim.keymap.set('n', '<leader>sa', '<cmd>StrudelAnalyze<cr>', { desc = 'Analyze key/scale' })
+```
+
 ## Keymaps
 
 No keymaps are set by default. For live coding, you'll want at minimum:
@@ -296,6 +361,9 @@ Active elements are highlighted as they play. By default, highlights link to sta
 | `StrudelConnected` | `DiagnosticOk` | Connected status |
 | `StrudelDisconnected` | `DiagnosticError` | Disconnected status |
 | `StrudelError` | `DiagnosticUnderlineError` | Error underline |
+| `StrudelTheoryHeader` | `Title` | Theory popup header |
+| `StrudelTheoryChord` | `Function` | Chord names in popup |
+| `StrudelTheorySelected` | `CursorLine` | Selected suggestion |
 
 To customize, override in your config (after colorscheme loads):
 

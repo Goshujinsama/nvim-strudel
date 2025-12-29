@@ -71,11 +71,11 @@ M.CHORD_TYPES = {
 
   -- Seventh chords
   maj7 = {
-    name = 'maj7',
+    name = 'M7',
     full_name = 'Major Seventh',
     intervals = { 0, 4, 7, 11 },
-    symbol = 'maj7',
-    strudel_suffix = 'maj7',
+    symbol = 'M7',
+    strudel_suffix = 'M7',
     quality = 'major',
   },
   dom7 = {
@@ -163,11 +163,11 @@ M.CHORD_TYPES = {
     quality = 'dominant',
   },
   maj9 = {
-    name = 'maj9',
+    name = 'M9',
     full_name = 'Major Ninth',
     intervals = { 0, 4, 7, 11, 14 },
-    symbol = 'maj9',
-    strudel_suffix = 'maj9',
+    symbol = 'M9',
+    strudel_suffix = 'M9',
     quality = 'major',
   },
   min9 = {
@@ -203,11 +203,11 @@ M.CHORD_TYPES = {
     quality = 'dominant',
   },
   maj13 = {
-    name = 'maj13',
+    name = 'M13',
     full_name = 'Major Thirteenth',
     intervals = { 0, 4, 7, 11, 14, 21 },
-    symbol = 'maj13',
-    strudel_suffix = 'maj13',
+    symbol = 'M13',
+    strudel_suffix = 'M13',
     quality = 'major',
   },
   min13 = {
