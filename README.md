@@ -141,7 +141,7 @@ Define keymaps using lazy.nvim's `keys` spec:
 
 ```lua
 {
-  'Goshujinsama/nvim-strudel',
+  'bathyalecho/nvim-strudel',
   ft = 'strudel',
   build = 'cd server && npm install && npm run build',
   keys = {
