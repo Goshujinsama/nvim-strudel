@@ -19,6 +19,12 @@ local setup_done = false
 ---@type function[] Unsubscribe functions for client callbacks
 local unsubscribers = {}
 
+---@type number Last time cleanup_invalid_buffers ran (for throttling)
+local last_cleanup_time = 0
+
+---@type number Minimum seconds between cleanup runs
+local CLEANUP_INTERVAL = 5
+
 ---Get or create the namespace
 ---@return number
 local function get_namespace()
@@ -48,8 +54,14 @@ function M.clear_all()
 end
 
 ---Remove entries for closed/invalid buffers from extmarks table
----Call this periodically to prevent memory leaks
+---Call this periodically to prevent memory leaks (throttled to run at most every CLEANUP_INTERVAL seconds)
 function M.cleanup_invalid_buffers()
+  local now = vim.uv.now() / 1000 -- Convert ms to seconds
+  if now - last_cleanup_time < CLEANUP_INTERVAL then
+    return -- Skip if we ran recently
+  end
+  last_cleanup_time = now
+
   for bufnr, _ in pairs(extmarks) do
     if not vim.api.nvim_buf_is_valid(bufnr) then
       extmarks[bufnr] = nil

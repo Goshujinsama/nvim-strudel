@@ -45,6 +45,7 @@ local state = {
   enabled = false, -- whether user has enabled pianoroll
   is_playing = false, -- whether playback is active
   callbacks_registered = false, -- whether event callbacks are registered
+  cached_width = 64, -- cached window width to avoid querying every frame
 }
 
 -- Unicode/ASCII characters for rendering
@@ -337,19 +338,79 @@ local function update_buffer_content(lines)
   if not state.bufnr or not vim.api.nvim_buf_is_valid(state.bufnr) then
     return
   end
-  
+
   vim.api.nvim_set_option_value('modifiable', true, { buf = state.bufnr })
   vim.api.nvim_buf_set_lines(state.bufnr, 0, -1, false, lines)
   vim.api.nvim_set_option_value('modifiable', false, { buf = state.bufnr })
 end
 
----Get the current window width
+---Apply highlights in a batch using nvim_call_atomic for better performance
+---@param highlights table[] Array of {line, col_start, col_end, hl_group}
+---@param lines string[] The buffer lines (for border highlight calculation)
+local function apply_highlights_batched(highlights, lines)
+  if not state.bufnr or not vim.api.nvim_buf_is_valid(state.bufnr) then
+    return
+  end
+
+  -- Clear old highlights first
+  vim.api.nvim_buf_clear_namespace(state.bufnr, state.ns_id, 0, -1)
+
+  -- Build atomic call list for all highlights
+  local calls = {}
+
+  -- Add content highlights
+  for _, hl in ipairs(highlights) do
+    table.insert(calls, {
+      'nvim_buf_add_highlight',
+      { state.bufnr, state.ns_id, hl.hl_group, hl.line, hl.col_start, hl.col_end }
+    })
+  end
+
+  -- Add border highlights (border chars are 3 bytes each in UTF-8)
+  local num_lines = #lines
+  for i = 0, num_lines - 1 do
+    -- Left border
+    table.insert(calls, {
+      'nvim_buf_add_highlight',
+      { state.bufnr, state.ns_id, 'StrudelPianoBorder', i, 0, 3 }
+    })
+    -- Right border
+    local line_len = #lines[i + 1]
+    table.insert(calls, {
+      'nvim_buf_add_highlight',
+      { state.bufnr, state.ns_id, 'StrudelPianoBorder', i, line_len - 3, line_len }
+    })
+  end
+
+  -- Full border on header and footer lines
+  if num_lines > 0 then
+    table.insert(calls, {
+      'nvim_buf_add_highlight',
+      { state.bufnr, state.ns_id, 'StrudelPianoBorder', 0, 0, -1 }
+    })
+    table.insert(calls, {
+      'nvim_buf_add_highlight',
+      { state.bufnr, state.ns_id, 'StrudelPianoBorder', num_lines - 1, 0, -1 }
+    })
+  end
+
+  -- Execute all highlights in one atomic call
+  if #calls > 0 then
+    vim.api.nvim_call_atomic(calls)
+  end
+end
+
+---Update the cached window width (called on resize events)
+local function update_cached_width()
+  if state.winid and vim.api.nvim_win_is_valid(state.winid) then
+    state.cached_width = vim.api.nvim_win_get_width(state.winid)
+  end
+end
+
+---Get the current window width (uses cache to avoid API calls every frame)
 ---@return number
 local function get_window_width()
-  if state.winid and vim.api.nvim_win_is_valid(state.winid) then
-    return vim.api.nvim_win_get_width(state.winid)
-  end
-  return 64 -- fallback
+  return state.cached_width
 end
 
 ---Get the maximum track name length
@@ -550,32 +611,9 @@ render_braille = function(cycle, phase, width)
     .. CHARS.corner_br
   table.insert(lines, footer_line)
 
-  -- Update buffer
+  -- Update buffer and apply highlights in batch
   update_buffer_content(lines)
-
-  -- Clear old highlights
-  vim.api.nvim_buf_clear_namespace(state.bufnr, state.ns_id, 0, -1)
-
-  -- Apply highlights
-  for _, hl in ipairs(all_highlights) do
-    vim.api.nvim_buf_add_highlight(
-      state.bufnr,
-      state.ns_id,
-      hl.hl_group,
-      hl.line,
-      hl.col_start,
-      hl.col_end
-    )
-  end
-
-  -- Border highlights (border chars are 3 bytes each in UTF-8)
-  for i = 0, #lines - 1 do
-    vim.api.nvim_buf_add_highlight(state.bufnr, state.ns_id, 'StrudelPianoBorder', i, 0, 3)
-    local line_len = #lines[i + 1]
-    vim.api.nvim_buf_add_highlight(state.bufnr, state.ns_id, 'StrudelPianoBorder', i, line_len - 3, line_len)
-  end
-  vim.api.nvim_buf_add_highlight(state.bufnr, state.ns_id, 'StrudelPianoBorder', 0, 0, -1)
-  vim.api.nvim_buf_add_highlight(state.bufnr, state.ns_id, 'StrudelPianoBorder', #lines - 1, 0, -1)
+  apply_highlights_batched(all_highlights, lines)
 end
 
 ---Render in drums braille mode (group 4 tracks per braille row)
@@ -691,32 +729,9 @@ render_drums = function(tracks, cycle, phase, width)
     .. CHARS.corner_br
   table.insert(lines, footer_line)
 
-  -- Update buffer
+  -- Update buffer and apply highlights in batch
   update_buffer_content(lines)
-
-  -- Clear old highlights
-  vim.api.nvim_buf_clear_namespace(state.bufnr, state.ns_id, 0, -1)
-
-  -- Apply highlights
-  for _, hl in ipairs(all_highlights) do
-    vim.api.nvim_buf_add_highlight(
-      state.bufnr,
-      state.ns_id,
-      hl.hl_group,
-      hl.line,
-      hl.col_start,
-      hl.col_end
-    )
-  end
-
-  -- Border highlights (border chars are 3 bytes each in UTF-8)
-  for i = 0, #lines - 1 do
-    vim.api.nvim_buf_add_highlight(state.bufnr, state.ns_id, 'StrudelPianoBorder', i, 0, 3)
-    local line_len = #lines[i + 1]
-    vim.api.nvim_buf_add_highlight(state.bufnr, state.ns_id, 'StrudelPianoBorder', i, line_len - 3, line_len)
-  end
-  vim.api.nvim_buf_add_highlight(state.bufnr, state.ns_id, 'StrudelPianoBorder', 0, 0, -1)
-  vim.api.nvim_buf_add_highlight(state.bufnr, state.ns_id, 'StrudelPianoBorder', #lines - 1, 0, -1)
+  apply_highlights_batched(all_highlights, lines)
 end
 
 ---Render in track mode (original behavior)
@@ -798,32 +813,9 @@ render_tracks = function(tracks, cycle, phase, width)
     all_highlights = {}
   end
 
-  -- Update buffer
+  -- Update buffer and apply highlights in batch
   update_buffer_content(lines)
-
-  -- Clear old highlights
-  vim.api.nvim_buf_clear_namespace(state.bufnr, state.ns_id, 0, -1)
-
-  -- Apply highlights
-  for _, hl in ipairs(all_highlights) do
-    vim.api.nvim_buf_add_highlight(
-      state.bufnr,
-      state.ns_id,
-      hl.hl_group,
-      hl.line, -- already 0-indexed relative to tracks
-      hl.col_start,
-      hl.col_end
-    )
-  end
-
-  -- Border highlights (border chars are 3 bytes each in UTF-8)
-  for i = 0, #lines - 1 do
-    vim.api.nvim_buf_add_highlight(state.bufnr, state.ns_id, 'StrudelPianoBorder', i, 0, 3)
-    local line_len = #lines[i + 1]
-    vim.api.nvim_buf_add_highlight(state.bufnr, state.ns_id, 'StrudelPianoBorder', i, line_len - 3, line_len)
-  end
-  vim.api.nvim_buf_add_highlight(state.bufnr, state.ns_id, 'StrudelPianoBorder', 0, 0, -1)
-  vim.api.nvim_buf_add_highlight(state.bufnr, state.ns_id, 'StrudelPianoBorder', #lines - 1, 0, -1)
+  apply_highlights_batched(all_highlights, lines)
 end
 
 ---Handle visualization data from server
@@ -962,6 +954,18 @@ show_window = function()
 
   -- Return to original window
   vim.api.nvim_set_current_win(current_win)
+
+  -- Cache initial window width
+  update_cached_width()
+
+  -- Update cached width on window resize
+  vim.api.nvim_create_autocmd('WinResized', {
+    callback = function()
+      if state.winid and vim.api.nvim_win_is_valid(state.winid) then
+        update_cached_width()
+      end
+    end,
+  })
 
   -- Start animation timer
   start_timer()

@@ -6,14 +6,14 @@ local M = {}
 ---@class StrudelClient
 ---@field connected boolean
 ---@field handle? uv_tcp_t
----@field buffer string
+---@field buffer_chunks string[] Table-based buffer chunks for efficient parsing
 ---@field callbacks table<string, function[]>
 
 ---@type StrudelClient
 local state = {
   connected = false,
   handle = nil,
-  buffer = '',
+  buffer_chunks = {}, -- Table-based buffer for better performance
   callbacks = {},
 }
 
@@ -97,27 +97,37 @@ end
 ---Handle incoming data from the server
 ---@param data string
 local function on_data(data)
-  state.buffer = state.buffer .. data
-  utils.info('Received raw data: ' .. data:gsub('\n', '\\n'))
+  -- Use table-based buffering to avoid string concatenation overhead
+  table.insert(state.buffer_chunks, data)
+
+  -- Only concatenate when we need to parse (when we have a newline)
+  if not data:find('\n') then
+    return
+  end
+
+  -- Concatenate all chunks
+  local buffer = table.concat(state.buffer_chunks)
+  state.buffer_chunks = {}
 
   -- Messages are newline-delimited JSON
   while true do
-    local newline_pos = state.buffer:find('\n')
+    local newline_pos = buffer:find('\n')
     if not newline_pos then
       break
     end
 
-    local line = state.buffer:sub(1, newline_pos - 1)
-    state.buffer = state.buffer:sub(newline_pos + 1)
+    local line = buffer:sub(1, newline_pos - 1)
+    buffer = buffer:sub(newline_pos + 1)
 
     local msg = parse_message(line)
     if msg and msg.type then
-      utils.info('Parsed message type: ' .. msg.type .. ' data: ' .. vim.inspect(msg):sub(1, 200))
-      utils.debug('Received message: ' .. msg.type)
       emit(msg.type, msg)
-    else
-      utils.info('Failed to parse message: ' .. line:sub(1, 100))
     end
+  end
+
+  -- Store any remaining data back in chunks
+  if #buffer > 0 then
+    table.insert(state.buffer_chunks, buffer)
   end
 end
 
@@ -216,7 +226,7 @@ function M.disconnect()
 
   local was_connected = state.connected
   state.connected = false
-  state.buffer = ''
+  state.buffer_chunks = {}
 
   if was_connected then
     utils.log('Disconnected from server')
@@ -234,7 +244,6 @@ function M.send(msg)
   end
 
   local data = vim.json.encode(msg) .. '\n'
-  utils.info('Sending message: ' .. msg.type .. ' data: ' .. data:sub(1, 200):gsub('\n', '\\n'))
 
   state.handle:write(data, function(err)
     if err then
