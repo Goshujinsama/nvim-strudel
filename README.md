@@ -68,25 +68,6 @@ brew install jack supercollider
 
 The `build` step compiles the backend server when the plugin is installed or updated.
 
-### lazy.vim with NixOS (important note)
-    
-On NixOS, the plugin requires build dependencies for native modules (MIDI support). Use `nix-shell` in the build command:
-    
-```lua
-        {
-        'bathyalecho/nvim-strudel',
-        ft = 'strudel',
-        build = 'nix-shell -p gnumake gcc pkg-config alsa-lib.dev --run "cd server && npm install && npm run build"',
-            keys = {
-                { '<C-CR>', '<cmd>StrudelEval<cr>', ft = 'strudel', desc = 'Strudel: Eval' },
-                { '<leader>ss', '<cmd>StrudelStop<cr>', ft = 'strudel', desc = 'Strudel: Stop' },
-                },
-             config = function()
-                require('strudel').setup()
-            end,
-        }
- ```
-
 ## Quick Start
 
 1. Open a `.strudel` file
