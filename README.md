@@ -68,7 +68,7 @@ brew install jack supercollider
 
 The `build` step compiles the backend server when the plugin is installed or updated.
 
-### NixOS
+### lazy.vim with NixOS (important note)
     
 On NixOS, the plugin requires build dependencies for native modules (MIDI support). Use `nix-shell` in the build command:
     
