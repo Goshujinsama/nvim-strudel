@@ -53,7 +53,7 @@ brew install jack supercollider
 
 ```lua
 {
-    'bathyalecho/nvim-strudel', branch="music-theory-feature"
+    'bathyalecho/nvim-strudel',
     ft = 'strudel',
     build = 'cd server && npm install && npm run build',
     keys = {
@@ -75,7 +75,6 @@ On NixOS, the plugin requires build dependencies for native modules (MIDI suppor
 ```lua
         {
         'bathyalecho/nvim-strudel',
-        branch = 'music-theory-feature',
         ft = 'strudel',
         build = 'nix-shell -p gnumake gcc pkg-config alsa-lib.dev --run "cd server && npm install && npm run build"',
             keys = {
