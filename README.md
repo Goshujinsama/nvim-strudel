@@ -18,6 +18,7 @@ nvim-strudel brings the Strudel live coding music environment to Neovim, providi
 
 - Neovim >= 0.9.0
 - Node.js >= 18.0
+- Python >= 3.x
 - Audio output device
 - **SuperCollider** with **SuperDirt** (for audio synthesis)
 
@@ -53,7 +54,7 @@ brew install jack supercollider
 
 ```lua
 {
-    'bathyalecho/nvim-strudel',
+    'bathyalecho/nvim-strudel', branch="music-theory-feature"
     ft = 'strudel',
     build = 'cd server && npm install && npm run build',
     keys = {
