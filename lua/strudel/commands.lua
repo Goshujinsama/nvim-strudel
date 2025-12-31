@@ -333,6 +333,191 @@ function M.setup()
     desc = 'Open Strudel log file (client/server/both)',
   })
 
+  -- Music Theory Commands
+
+  -- :StrudelTheory - Open chord suggestions popup
+  vim.api.nvim_create_user_command('StrudelTheory', function(opts)
+    local cfg = config.get()
+    if cfg.theory and cfg.theory.enabled == false then
+      utils.warn('Music theory features are disabled. Set theory.enabled = true in config.')
+      return
+    end
+
+    local theory_ui = require('strudel.theory_ui')
+    local scope = opts.args ~= '' and opts.args or cfg.theory.default_scope or 'line'
+    theory_ui.show({ scope = scope })
+  end, {
+    nargs = '?',
+    complete = function()
+      return { 'line', 'selection', 'buffer' }
+    end,
+    desc = 'Show chord suggestions based on pattern analysis',
+  })
+
+  -- :StrudelAnalyze - Show key/scale analysis
+  vim.api.nvim_create_user_command('StrudelAnalyze', function(opts)
+    local cfg = config.get()
+    if cfg.theory and cfg.theory.enabled == false then
+      utils.warn('Music theory features are disabled. Set theory.enabled = true in config.')
+      return
+    end
+
+    local analyzer = require('strudel.theory.analyzer')
+    local scope = opts.args ~= '' and opts.args or 'buffer'
+
+    local result
+    if scope == 'line' then
+      result = analyzer.analyze_line(vim.api.nvim_get_current_line())
+    elseif scope == 'selection' then
+      local start_line = vim.fn.line("'<")
+      local end_line = vim.fn.line("'>")
+      if start_line > 0 and end_line > 0 then
+        result = analyzer.analyze_selection(start_line, end_line)
+      else
+        result = analyzer.analyze_line(vim.api.nvim_get_current_line())
+      end
+    else
+      result = analyzer.analyze_buffer()
+    end
+
+    if result then
+      local msg = analyzer.format_result(result)
+      utils.log('Detected: ' .. msg)
+
+      -- Show alternatives if confidence is low
+      if result.confidence < 0.7 and #result.all_matches > 1 then
+        local alts = {}
+        for i = 2, math.min(4, #result.all_matches) do
+          local m = result.all_matches[i]
+          local scale_name = m.scale_info and m.scale_info.name or m.scale
+          table.insert(alts, string.format('%s %s (%d%%)', m.root, scale_name, math.floor(m.confidence * 100)))
+        end
+        if #alts > 0 then
+          utils.log('Alternatives: ' .. table.concat(alts, ', '))
+        end
+      end
+    else
+      utils.warn('Could not detect key/scale')
+    end
+  end, {
+    nargs = '?',
+    complete = function()
+      return { 'line', 'selection', 'buffer' }
+    end,
+    desc = 'Analyze patterns to detect key/scale',
+  })
+
+  -- :StrudelScales - Browse and insert scales
+  vim.api.nvim_create_user_command('StrudelScales', function(opts)
+    local cfg = config.get()
+    if cfg.theory and cfg.theory.enabled == false then
+      utils.warn('Music theory features are disabled. Set theory.enabled = true in config.')
+      return
+    end
+
+    local scales = require('strudel.theory.scales')
+    local root = opts.args ~= '' and opts.args or 'C'
+
+    -- Validate root
+    if not scales.note_name_to_pc(root) then
+      utils.warn('Invalid root note: ' .. root)
+      return
+    end
+
+    -- Normalize root
+    root = root:sub(1, 1):upper() .. root:sub(2):lower():gsub('s', '#')
+
+    local items = {}
+    for name, scale in pairs(scales.SCALES) do
+      local notes = scales.get_scale_notes(root, name)
+      table.insert(items, {
+        name = name,
+        display_name = scale.name,
+        notes = notes and table.concat(notes, ' ') or '',
+        intervals = table.concat(scale.intervals, ' '),
+      })
+    end
+
+    -- Sort by name
+    table.sort(items, function(a, b)
+      return a.display_name < b.display_name
+    end)
+
+    picker.pick({
+      title = 'Scales (' .. root .. ')',
+      items = items,
+      format_item = function(item)
+        return string.format('%-20s %s', item.display_name, item.notes)
+      end,
+      on_select = function(item)
+        -- Insert as n() pattern with scale degrees
+        local degrees = item.intervals
+        vim.api.nvim_put({ string.format('n("%s")', degrees) }, 'c', true, true)
+      end,
+    })
+  end, {
+    nargs = '?',
+    desc = 'Browse and insert scales (optionally specify root note)',
+  })
+
+  -- :StrudelChords - Browse and insert chord types
+  vim.api.nvim_create_user_command('StrudelChords', function(opts)
+    local cfg = config.get()
+    if cfg.theory and cfg.theory.enabled == false then
+      utils.warn('Music theory features are disabled. Set theory.enabled = true in config.')
+      return
+    end
+
+    local chords = require('strudel.theory.chords')
+    local scales = require('strudel.theory.scales')
+    local root = opts.args ~= '' and opts.args or 'C'
+
+    -- Validate root
+    if not scales.note_name_to_pc(root) then
+      utils.warn('Invalid root note: ' .. root)
+      return
+    end
+
+    -- Normalize root
+    root = root:sub(1, 1):upper() .. root:sub(2):lower():gsub('s', '#')
+
+    local items = {}
+    for name, chord_type in pairs(chords.CHORD_TYPES) do
+      local chord = chords.build_chord(root, name)
+      if chord then
+        table.insert(items, {
+          name = name,
+          chord = chord,
+          chord_type = chord_type,
+          display = root .. chord_type.symbol,
+          full_name = chord_type.full_name,
+          notes = table.concat(chord.notes, ' '),
+        })
+      end
+    end
+
+    -- Sort by name
+    table.sort(items, function(a, b)
+      return a.full_name < b.full_name
+    end)
+
+    picker.pick({
+      title = 'Chord Types (' .. root .. ')',
+      items = items,
+      format_item = function(item)
+        return string.format('%-12s %-20s %s', item.display, item.full_name, item.notes)
+      end,
+      on_select = function(item)
+        -- Insert as chord() pattern
+        local strudel = chords.chord_to_strudel(item.chord)
+        vim.api.nvim_put({ string.format('chord("%s")', strudel) }, 'c', true, true)
+      end,
+    })
+  end, {
+    nargs = '?',
+    desc = 'Browse and insert chord types (optionally specify root note)',
+  })
+
   utils.debug('Commands registered')
 end
 

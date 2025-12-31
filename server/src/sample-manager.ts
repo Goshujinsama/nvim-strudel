@@ -343,11 +343,11 @@ export function notifySuperDirtLoadSamples(path: string = CACHE_DIR, timeout: nu
   }
 
   const fullPath = path + '/*';
-  
+
   try {
-    // Get the reply port number to send to SuperDirt
+    // Get the reply port number to send to SuperDirt (only when waiting for confirmation)
     const replyPortNum = timeout > 0 ? (replyPort?.socket?.address()?.port || 0) : 0;
-    
+
     // Send the load request
     oscPort.send({
       address: '/strudel/loadSamples',
@@ -357,16 +357,18 @@ export function notifySuperDirtLoadSamples(path: string = CACHE_DIR, timeout: nu
       ],
     });
     console.log(`[sample-manager] Notified SuperDirt to load samples from: ${path}`);
-    
-    // If no timeout, fire and forget
+
+    // If no timeout, fire and forget - don't register any callback
     if (timeout <= 0) {
       return Promise.resolve(true);
     }
-    
+
     // Wait for confirmation with timeout
     return new Promise<boolean>((resolve) => {
+      // Store the callback for confirmation
       pendingLoadCallbacks.set(fullPath, () => resolve(true));
-      
+
+      // Always clean up after timeout, whether confirmed or not
       setTimeout(() => {
         if (pendingLoadCallbacks.has(fullPath)) {
           console.warn(`[sample-manager] Timeout waiting for SuperDirt confirmation`);
@@ -379,6 +381,13 @@ export function notifySuperDirtLoadSamples(path: string = CACHE_DIR, timeout: nu
     console.error('[sample-manager] Failed to notify SuperDirt:', err);
     return Promise.resolve(false);
   }
+}
+
+/**
+ * Clear all pending load callbacks (for cleanup/shutdown)
+ */
+export function clearPendingLoadCallbacks(): void {
+  pendingLoadCallbacks.clear();
 }
 
 /**

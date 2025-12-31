@@ -48,6 +48,37 @@ function M.setup()
     default = true,
     link = 'DiagnosticUnderlineError',
   })
+
+  -- Music Theory UI highlights
+  vim.api.nvim_set_hl(0, 'StrudelTheoryHeader', {
+    default = true,
+    link = 'Title',
+  })
+
+  vim.api.nvim_set_hl(0, 'StrudelTheoryChord', {
+    default = true,
+    link = 'Function',
+  })
+
+  vim.api.nvim_set_hl(0, 'StrudelTheoryDegree', {
+    default = true,
+    link = 'Number',
+  })
+
+  vim.api.nvim_set_hl(0, 'StrudelTheoryFunction', {
+    default = true,
+    link = 'Comment',
+  })
+
+  vim.api.nvim_set_hl(0, 'StrudelTheorySelected', {
+    default = true,
+    link = 'CursorLine',
+  })
+
+  vim.api.nvim_set_hl(0, 'StrudelTheoryRoot', {
+    default = true,
+    link = 'Special',
+  })
 end
 
 return M

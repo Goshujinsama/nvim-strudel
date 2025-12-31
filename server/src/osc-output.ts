@@ -201,31 +201,25 @@ function hapToOscArgs(hap: any, cps: number): any[] {
   if (controls.bank && controls.s) {
     const bankAlias = String(controls.bank);
     const sound = String(controls.s);
-    
+
     // Try to resolve drum machine alias (tr909 -> RolandTR909)
     const fullBankName = resolveDrumMachineBankSync(bankAlias);
-    
-    // Check if Strudel already prefixed the sound name with the bank alias
-    // (e.g., s="tr909_sd" with bank="tr909")
-    if (sound.startsWith(bankAlias + '_')) {
-      if (fullBankName) {
-        // Replace alias prefix with full bank name: tr909_sd -> RolandTR909_sd
-        controls.s = fullBankName + '_' + sound.slice(bankAlias.length + 1);
-      }
-      // else keep as-is (unknown alias)
+
+    if (!fullBankName) {
+      // Unknown bank alias - warn and use sound as-is
+      console.warn(`[osc] Unknown bank "${bankAlias}" - valid banks include: TR808, TR909, Linn, DMX, etc. Using sound "${sound}" without bank prefix.`);
+    } else if (sound.startsWith(bankAlias + '_')) {
+      // Strudel already prefixed with alias (e.g., s="tr909_sd" with bank="tr909")
+      // Replace alias prefix with full bank name: tr909_sd -> RolandTR909_sd
+      controls.s = fullBankName + '_' + sound.slice(bankAlias.length + 1);
     } else if (sound.startsWith(fullBankName + '_')) {
       // Already has full bank prefix (e.g., s="RolandTR909_bd" with bank="RolandTR909")
       // Keep as-is
     } else {
       // Sound doesn't have bank prefix, add it
-      if (fullBankName) {
-        controls.s = `${fullBankName}_${sound}`;
-      } else {
-        // Unknown bank - just concatenate (original behavior)
-        controls.s = bankAlias + '_' + sound;
-      }
+      controls.s = `${fullBankName}_${sound}`;
     }
-    delete controls.bank; // Don't send bank to SuperDirt - we already applied it
+    delete controls.bank; // Don't send bank to SuperDirt
   }
 
   // Handle roomsize -> size alias

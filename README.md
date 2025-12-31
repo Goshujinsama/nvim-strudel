@@ -11,6 +11,7 @@ nvim-strudel brings the Strudel live coding music environment to Neovim, providi
 - Full playback control (play, pause, stop, hush)
 - Pianoroll visualization (auto-shows when playing, hides when stopped)
 - LSP support for mini-notation (completions, hover, diagnostics)
+- **Music theory intelligence** - key detection, chord suggestions, scale browser
 - All default Strudel samples available (piano, drums, synths, etc.)
 
 ## Requirements
@@ -18,6 +19,33 @@ nvim-strudel brings the Strudel live coding music environment to Neovim, providi
 - Neovim >= 0.9.0
 - Node.js >= 18.0
 - Audio output device
+- **SuperCollider** with **SuperDirt** (for audio synthesis)
+
+### Installing Audio Dependencies
+
+nvim-strudel uses OSC to send patterns to SuperDirt for audio synthesis. You need SuperCollider and JACK installed. SuperDirt is installed automatically on first run.
+
+**Arch Linux:**
+```bash
+sudo pacman -S jack2-dbus supercollider sc3-plugins
+```
+
+**Fedora:**
+```bash
+sudo dnf install jack-audio-connection-kit-dbus supercollider supercollider-sc3-plugins
+```
+
+**Debian/Ubuntu:**
+```bash
+sudo apt install jackd2 supercollider sc3-plugins
+```
+
+**macOS (Homebrew):**
+```bash
+brew install jack supercollider
+```
+
+> **Note:** Installing JACK with D-Bus support (`jack2-dbus` or `jackd2`) is recommended. D-Bus allows PulseAudio/PipeWire to automatically release the audio device when JACK starts.
 
 ## Installation
 
@@ -25,13 +53,16 @@ nvim-strudel brings the Strudel live coding music environment to Neovim, providi
 
 ```lua
 {
-  'Goshujinsama/nvim-strudel',
-  ft = 'strudel',
-  build = 'cd server && npm install && npm run build',
-  keys = {
-    { '<C-CR>', '<cmd>StrudelEval<cr>', ft = 'strudel', desc = 'Strudel: Eval' },
-    { '<leader>ss', '<cmd>StrudelStop<cr>', ft = 'strudel', desc = 'Strudel: Stop' },
-  },
+    'bathyalecho/nvim-strudel',
+    ft = 'strudel',
+    build = 'cd server && npm install && npm run build',
+    keys = {
+      { '<C-CR>', '<cmd>StrudelEval<cr>', ft = 'strudel', desc = 'Strudel: Eval' },
+      { '<leader>ss', '<cmd>StrudelStop<cr>', ft = 'strudel', desc = 'Strudel: Stop' },
+    },
+    config = function()
+      require('strudel').setup()
+    end,
 }
 ```
 
@@ -57,9 +88,9 @@ require('strudel').setup({
 
   -- Audio output backend
   audio = {
-    output = 'webaudio',      -- 'webaudio' (default) or 'osc' (SuperDirt)
+    output = 'osc',           -- 'osc' (default, SuperDirt) or 'webaudio' (Node.js)
     osc_host = '127.0.0.1',   -- SuperDirt OSC host
-    osc_port = 57120,         -- SuperDirt OSC port  
+    osc_port = 57120,         -- SuperDirt OSC port
     auto_superdirt = true,    -- Auto-start SuperDirt if sclang available
   },
 
@@ -86,6 +117,17 @@ require('strudel').setup({
     height = 10,
     display_cycles = 2,
     mode = 'auto',  -- 'auto', 'tracks', 'notes', or 'drums'
+  },
+
+  -- Music theory features
+  theory = {
+    enabled = true,              -- Enable music theory features
+    default_scope = 'line',      -- 'line', 'selection', or 'buffer'
+    show_degrees = true,         -- Show scale degrees in suggestions
+    show_functions = true,       -- Show harmonic functions (tonic, dominant, etc.)
+    include_secondary = true,    -- Include secondary dominants
+    include_substitutions = true, -- Include chord substitutions
+    include_borrowed = true,     -- Include borrowed chords
   },
 
   -- Picker backend: 'auto', 'snacks', or 'telescope'
@@ -118,6 +160,10 @@ require('strudel').setup({
 | `:StrudelSounds` | Browse available sounds |
 | `:StrudelBanks` | Browse sample banks |
 | `:StrudelPatterns` | Browse saved patterns |
+| `:StrudelTheory [scope]` | Open chord suggestions popup (line/selection/buffer) |
+| `:StrudelAnalyze [scope]` | Detect key/scale from patterns |
+| `:StrudelScales [root]` | Browse and insert scales |
+| `:StrudelChords [root]` | Browse and insert chord types |
 
 ## Pianoroll
 
@@ -127,6 +173,71 @@ The pianoroll provides a visual representation of your pattern. It automatically
 - Stays visible when paused
 - Supports multiple visualization modes: `auto`, `tracks`, `notes`, `drums`
 - Pattern code using `.pianoroll()` or `.punchcard()` auto-enables visualization
+
+## Music Theory
+
+nvim-strudel includes music theory intelligence that analyzes your patterns and suggests compatible chords.
+
+### Key Detection
+
+Run `:StrudelAnalyze` to detect the key and scale from your patterns:
+
+```javascript
+note("c3 e3 g3 b3")  // Detected: C Major (85% confidence)
+n("0 2 4 5 7")       // Detected: C Major (based on scale degrees)
+chord("<Am7 Dm7 G7 Cmaj7>")  // Detected: C Major (from chord progression)
+```
+
+### Chord Suggestions
+
+Run `:StrudelTheory` to open a floating window with chord suggestions:
+
+```
+┌─ Chord Suggestions ─────────────────┐
+│ C Major (85%) [line]                │
+│─────────────────────────────────────│
+│ j/k:nav  c:chord  n:note  d:deg     │
+│                                     │
+│ ▶ Cmaj7    I (tonic)                │
+│   Dm7      ii (supertonic)          │
+│   Em7      iii (mediant)            │
+│   Fmaj7    IV (subdominant)         │
+│   G7       V (dominant)             │
+│   Am7      vi (submediant)          │
+│   Bm7b5    vii (leading tone)       │
+│   D7       V7/ii (secondary dom)    │
+└─────────────────────────────────────┘
+```
+
+**Floating window keybindings:**
+
+| Key | Action |
+|-----|--------|
+| `j/k` or arrows | Navigate suggestions |
+| `c` or `<CR>` | Insert as `chord("...")` |
+| `n` | Insert as `note("...")` |
+| `d` | Insert as `n("...")` (scale degrees) |
+| `s` | Cycle scope (line → selection → buffer) |
+| `q` or `<Esc>` | Close |
+
+### Scale and Chord Browsers
+
+Browse and insert scales or chords with a picker:
+
+```vim
+:StrudelScales       " Browse all scales (default root: C)
+:StrudelScales G     " Browse scales starting on G
+:StrudelChords       " Browse all chord types (default root: C)
+:StrudelChords F#    " Browse chords with F# root
+```
+
+### Suggested Keymaps
+
+```lua
+vim.keymap.set('n', '<leader>st', '<cmd>StrudelTheory<cr>', { desc = 'Chord suggestions' })
+vim.keymap.set('v', '<leader>st', '<cmd>StrudelTheory selection<cr>', { desc = 'Chord suggestions (selection)' })
+vim.keymap.set('n', '<leader>sa', '<cmd>StrudelAnalyze<cr>', { desc = 'Analyze key/scale' })
+```
 
 ## Keymaps
 
@@ -138,7 +249,7 @@ Define keymaps using lazy.nvim's `keys` spec:
 
 ```lua
 {
-  'Goshujinsama/nvim-strudel',
+  'bathyalecho/nvim-strudel',
   ft = 'strudel',
   build = 'cd server && npm install && npm run build',
   keys = {
@@ -178,67 +289,36 @@ require('strudel').setup({
 
 nvim-strudel supports two audio backends:
 
-### Web Audio (Default)
+### OSC/SuperDirt (Default)
 
-The default backend uses Node.js Web Audio API via `node-web-audio-api`. This works out of the box with no additional setup.
+The default backend sends OSC messages to SuperDirt running in SuperCollider. This provides the best performance and audio quality.
 
-**Pros**: Zero configuration, works immediately  
-**Cons**: Higher CPU usage, potential memory growth with heavy effects (tremolo, etc.)
+**Pros**: Lower CPU usage, better audio quality, access to SuperDirt effects
+**Cons**: Requires SuperCollider installation (see [Requirements](#installing-audio-dependencies))
 
-### OSC/SuperDirt Backend
+When you run `:StrudelPlay`, nvim-strudel will automatically:
+- Start JACK on Linux if not already running
+- Launch SuperDirt with optimized settings
+- Install the SuperDirt quark if not already installed
 
-For better performance and professional audio quality, you can use SuperCollider with SuperDirt. This sends OSC messages to SuperDirt instead of synthesizing audio in Node.js.
+### Web Audio Backend
 
-**Pros**: Lower CPU, better audio quality, access to SuperDirt effects  
-**Cons**: Requires SuperCollider installation
+An alternative backend using Node.js Web Audio API via `node-web-audio-api`. This works without SuperCollider but has higher CPU usage.
 
-#### Configuration
+**Pros**: No external dependencies beyond Node.js
+**Cons**: Higher CPU usage, potential memory growth with heavy effects
 
-Enable OSC output in your setup:
+To use Web Audio instead of OSC:
 
 ```lua
 require('strudel').setup({
   audio = {
-    output = 'osc',           -- Use SuperDirt instead of Web Audio
-    osc_host = '127.0.0.1',   -- SuperDirt host (default)
-    osc_port = 57120,         -- SuperDirt port (default)
-    auto_superdirt = true,    -- Auto-start SuperDirt (default)
+    output = 'webaudio',
   },
 })
 ```
 
-When `auto_superdirt = true` (the default), nvim-strudel will automatically:
-- Install the SuperDirt quark if not already installed
-- Start JACK on Linux if not already running
-- Launch SuperDirt with optimized settings
-
-#### Installing SuperCollider
-
-You only need to install SuperCollider and JACK. SuperDirt is installed automatically.
-
-> **Note:** Installing JACK with D-Bus support (`jack2-dbus` or `jackd2`) is highly recommended. D-Bus allows PulseAudio/PipeWire to automatically release the audio device when JACK starts and route audio through JACK, avoiding conflicts.
-
-**Arch Linux:**
-```bash
-sudo pacman -S jack2-dbus supercollider sc3-plugins
-```
-
-**Debian/Ubuntu:**
-```bash
-sudo apt install jackd2 supercollider sc3-plugins
-```
-
-**Fedora:**
-```bash
-sudo dnf install jack-audio-connection-kit-dbus supercollider supercollider-sc3-plugins
-```
-
-**macOS (Homebrew):**
-```bash
-brew install jack supercollider
-```
-
-#### Troubleshooting OSC
+### Troubleshooting Audio
 
 **No sound from SuperDirt:**
 - Check `:StrudelStatus` to verify OSC is connected
@@ -281,6 +361,9 @@ Active elements are highlighted as they play. By default, highlights link to sta
 | `StrudelConnected` | `DiagnosticOk` | Connected status |
 | `StrudelDisconnected` | `DiagnosticError` | Disconnected status |
 | `StrudelError` | `DiagnosticUnderlineError` | Error underline |
+| `StrudelTheoryHeader` | `Title` | Theory popup header |
+| `StrudelTheoryChord` | `Function` | Chord names in popup |
+| `StrudelTheorySelected` | `CursorLine` | Selected suggestion |
 
 To customize, override in your config (after colorscheme loads):
 
@@ -297,3 +380,4 @@ AGPL-3.0 - Required due to dependency on Strudel libraries.
 
 - [Strudel](https://strudel.cc/) by Felix Roos and contributors
 - [TidalCycles](https://tidalcycles.org/) for the pattern language inspiration
+- Michael Liebenow for the original repo of this fork

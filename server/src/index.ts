@@ -259,13 +259,10 @@ async function main() {
     process.exit(0);
   };
 
-  // When using OSC, disable Web Audio output
-  if (useOsc) {
-    engine.setWebAudioEnabled(false);
-    console.log('[strudel-server] Web Audio disabled (OSC mode)');
-  } else {
-    console.log('[strudel-server] Web Audio output enabled (superdough)');
-  }
+  // Web Audio is always enabled for synth sounds (sine, sawtooth, square, triangle)
+  // These only work via superdough, not SuperDirt OSC
+  // When OSC is also enabled, sample sounds go to both (SuperDirt for better quality)
+  console.log('[strudel-server] Web Audio output enabled (superdough - required for synth sounds)');
 
   // Enable OSC output to SuperDirt if requested
   if (useOsc) {

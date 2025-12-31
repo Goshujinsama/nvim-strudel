@@ -1,5 +1,6 @@
 import { repl } from '@strudel/core/repl.mjs';
 import { evalScope } from '@strudel/core/evaluate.mjs';
+import { Pattern, silence } from '@strudel/core/pattern.mjs';
 import * as core from '@strudel/core';
 import * as mini from '@strudel/mini';
 import * as tonal from '@strudel/tonal';
@@ -8,7 +9,7 @@ import type { ActiveElement, VisualizationEvent } from './types.js';
 import { initOsc, sendHapToSuperDirt, isOscConnected, closeOsc, setAudioContextStartTime } from './osc-output.js';
 import { writeEngineState, clearEngineState } from './engine-state.js';
 import { loadSamples as loadSamplesForSuperDirt, initSampleManager, notifySuperDirtLoadSamples, setupOscPort } from './sample-manager.js';
-import { loadSoundsForCode, ensureDrumMachineMetadataLoaded } from './on-demand-loader.js';
+import { loadSoundsForCode, ensureDrumMachineMetadataLoaded, resolveDrumMachineBankSync } from './on-demand-loader.js';
 import { registerBankMetadata } from './sample-metadata.js';
 
 // NOTE: Web Audio API polyfill is initialized in index.ts before this module is imported.
@@ -41,6 +42,10 @@ try {
 const synthSounds: Set<string> = new Set();      // Synth waveforms (sine, saw, etc.)
 const sampleBanks: Set<string> = new Set();      // Bank names for .bank() (RolandTR808, etc.)
 const loadedSamples: Set<string> = new Set();    // All sample/sound names for s()/sound()
+
+// Maximum active elements to prevent unbounded memory growth between broadcasts
+// At 50ms broadcast interval and typical patterns, 500 should be more than enough
+const MAX_ACTIVE_ELEMENTS = 500;
 
 // Flag to enable SuperDirt sample downloading (set by engine when OSC mode is active)
 let oscModeEnabled = false;
@@ -231,11 +236,12 @@ const visualizerMethods = [
   'scope',
 ];
 
-// Use core.Pattern to ensure we modify the same class that s() and other
-// functions use (ESM can treat different import paths as different modules)
-const Pattern = (core as any).Pattern;
-const silence = (core as any).silence;
+// The @strudel/core package has TWO Pattern classes:
+// 1. Pattern from pattern.mjs (source file) - used by repl.mjs
+// 2. Pattern from dist/index.mjs (bundle) - used by s() and other functions
+// We need to set .p() on BOTH to ensure it works everywhere
 const PatternProto = Pattern.prototype as any;
+const BundledPatternProto = (core as any).Pattern.prototype;
 
 for (const method of visualizerMethods) {
   if (!PatternProto[method]) {
@@ -251,10 +257,13 @@ console.log('[strudel-engine] Visualizer stubs registered (pianoroll, punchcard,
 // Register .p() and .q() methods for labeled pattern syntax (gtr: s("bd"))
 // These are normally injected by the REPL, but we need them before first eval
 // pPatterns will be populated by the REPL's own injectPatternMethods later
+// Set .p() and .q() on both Pattern prototypes
+// The REPL's injectPatternMethods will set the real .p() on PatternProto (source Pattern)
+// We make BundledPatternProto delegate to PatternProto so it uses the same .p()
+
+// First, set up stubs on the source Pattern (REPL will override these)
 if (!PatternProto.p) {
   PatternProto.p = function(id: string) {
-    // The REPL will override this with its own implementation that stores patterns
-    // This stub just allows the syntax to work on first eval
     return this;
   };
 }
@@ -263,11 +272,24 @@ if (!PatternProto.q) {
     return silence;
   };
 }
-// Also add d1-d9 and p1-p9 getters for convenience
+
+// Make the bundled Pattern delegate .p() and .q() to the source Pattern
+// This way, when REPL sets PatternProto.p, it affects both Pattern classes
+Object.defineProperty(BundledPatternProto, 'p', {
+  get() { return PatternProto.p; },
+  configurable: true
+});
+Object.defineProperty(BundledPatternProto, 'q', {
+  get() { return PatternProto.q; },
+  configurable: true
+});
+// Also add d1-d9 and p1-p9 getters for convenience (on both Pattern prototypes)
 for (let i = 1; i < 10; i++) {
   const di = `d${i}`;
   const pi = `p${i}`;
   const qi = `q${i}`;
+
+  // Source Pattern
   if (!Object.getOwnPropertyDescriptor(PatternProto, di)) {
     Object.defineProperty(PatternProto, di, {
       get() { return this.p(i); },
@@ -282,6 +304,23 @@ for (let i = 1; i < 10; i++) {
   }
   if (!PatternProto[qi]) {
     PatternProto[qi] = silence;
+  }
+
+  // Bundled Pattern - delegate to source Pattern (use this.p(i) which delegates correctly)
+  if (!Object.getOwnPropertyDescriptor(BundledPatternProto, di)) {
+    Object.defineProperty(BundledPatternProto, di, {
+      get() { return this.p(i); },
+      configurable: true,
+    });
+  }
+  if (!Object.getOwnPropertyDescriptor(BundledPatternProto, pi)) {
+    Object.defineProperty(BundledPatternProto, pi, {
+      get() { return this.p(i); },
+      configurable: true,
+    });
+  }
+  if (!BundledPatternProto[qi]) {
+    BundledPatternProto[qi] = silence;
   }
 }
 console.log('[strudel-engine] Pattern label methods registered (.p(), .q(), .d1-.d9, .p1-.p9)');
@@ -577,27 +616,48 @@ export class StrudelEngine {
       defaultOutput: async (hap: any, deadline: number, duration: number, cps: number, t: number): Promise<void> => {
         // IMPORTANT: Don't await superdough - fire and forget for tight timing
         // The Web Audio API handles scheduling internally via absoluteTime
-        console.log(`[strudel-engine] defaultOutput called: s=${hap.value?.s} webAudio=${this.webAudioEnabled} osc=${this.oscEnabled} oscConnected=${isOscConnected()}`);
-        
+
+        // Determine the sound name to check if it's a synth
+        const soundName = hap.value?.s || '';
+        const isSynthSound = synthSounds.has(soundName);
+
+        // Routing logic:
+        // - Synth sounds (sine, sawtooth, etc.) -> Web Audio only (SuperDirt doesn't have these)
+        // - Sample sounds when OSC connected -> OSC only (avoid double-playing)
+        // - Sample sounds when OSC not connected -> Web Audio
+        const useWebAudioForThis = this.webAudioEnabled && (isSynthSound || !this.oscEnabled || !isOscConnected());
+        const useOscForThis = this.oscEnabled && isOscConnected() && !isSynthSound;
+
         // Play sound via superdough (Web Audio)
-        if (this.webAudioEnabled) {
+        if (useWebAudioForThis) {
           // Use the absolute time 't' directly - this is what strudel's webaudio.mjs does
           // The 't' parameter is the precise target time for this event
           // See: https://github.com/tidalcycles/strudel/pull/1004
+
+          // Check for unknown bank aliases and strip them to prevent invalid sound names
+          let value = hap.value;
+          if (value?.bank && value?.s) {
+            const fullBankName = resolveDrumMachineBankSync(String(value.bank));
+            if (!fullBankName) {
+              console.warn(`[strudel-engine] Unknown bank "${value.bank}" - valid banks include: TR808, TR909, Linn, DMX, etc. Using sound "${value.s}" without bank prefix.`);
+              // Strip the invalid bank to prevent superdough from creating "drum_bd" etc.
+              value = { ...value };
+              delete value.bank;
+            }
+          }
+
           // Fire and forget - don't await, let Web Audio handle the timing
-          superdough(hap.value, t, duration, cps, hap.whole?.begin?.valueOf()).catch((err) => {
+          superdough(value, t, duration, cps, hap.whole?.begin?.valueOf()).catch((err) => {
             // Only log errors for debugging, and do it asynchronously
             const sound = hap.value?.s || hap.value?.note || '?';
             console.warn(`[strudel-engine] Audio error for "${sound}": ${err instanceof Error ? err.message : err}`);
           });
         }
-        
-        // Also send to SuperDirt via OSC if enabled
+
+        // Send to SuperDirt via OSC for sample sounds
         // Pass 't' (target time in AudioContext seconds) for proper scheduling
-        if (this.oscEnabled && isOscConnected()) {
+        if (useOscForThis) {
           sendHapToSuperDirt(hap, t, cps);
-        } else if (this.oscEnabled) {
-          console.log('[strudel-engine] OSC enabled but not connected, skipping hap');
         }
         
         // Defer visualization work to avoid blocking audio scheduling
@@ -610,7 +670,17 @@ export class StrudelEngine {
           
           // Capture locations and process in next tick
           setImmediate(() => {
+            // Cap active elements to prevent unbounded memory growth
+            if (this.activeElements.length >= MAX_ACTIVE_ELEMENTS) {
+              return;
+            }
+
             for (let i = 0; i < locations.length; i++) {
+              // Stop if we hit the cap
+              if (this.activeElements.length >= MAX_ACTIVE_ELEMENTS) {
+                break;
+              }
+
               const loc = locations[i];
               if (typeof loc.start === 'number' && typeof loc.end === 'number') {
                 const startPos = fastOffsetToLineCol(loc.start);

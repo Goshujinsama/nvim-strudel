@@ -13,6 +13,18 @@ local extmarks = {}
 ---@type number? The buffer that was last evaluated (where highlights should go)
 local evaluated_bufnr = nil
 
+---@type boolean Whether setup() has been called
+local setup_done = false
+
+---@type function[] Unsubscribe functions for client callbacks
+local unsubscribers = {}
+
+---@type number Last time cleanup_invalid_buffers ran (for throttling)
+local last_cleanup_time = 0
+
+---@type number Minimum seconds between cleanup runs
+local CLEANUP_INTERVAL = 5
+
 ---Get or create the namespace
 ---@return number
 local function get_namespace()
@@ -39,6 +51,22 @@ function M.clear_all()
     end
   end
   extmarks = {}
+end
+
+---Remove entries for closed/invalid buffers from extmarks table
+---Call this periodically to prevent memory leaks (throttled to run at most every CLEANUP_INTERVAL seconds)
+function M.cleanup_invalid_buffers()
+  local now = vim.uv.now() / 1000 -- Convert ms to seconds
+  if now - last_cleanup_time < CLEANUP_INTERVAL then
+    return -- Skip if we ran recently
+  end
+  last_cleanup_time = now
+
+  for bufnr, _ in pairs(extmarks) do
+    if not vim.api.nvim_buf_is_valid(bufnr) then
+      extmarks[bufnr] = nil
+    end
+  end
 end
 
 ---Set the buffer that should receive highlights
@@ -111,9 +139,17 @@ function M.highlight_active(bufnr, elements)
 end
 
 ---Setup event handlers for the visualizer
+---Safe to call multiple times; will only register handlers once
 function M.setup()
+  -- Prevent duplicate setup
+  if setup_done then
+    utils.debug('Visualizer already setup, skipping')
+    return
+  end
+  setup_done = true
+
   -- Listen for active element updates from the server
-  client.on('active', function(msg)
+  local unsub_active = client.on('active', function(msg)
     utils.debug('Visualizer received active event with ' .. #(msg.elements or {}) .. ' elements')
     local elements = msg.elements or {}
     -- Only apply highlights to the buffer that was evaluated
@@ -121,21 +157,44 @@ function M.setup()
     if evaluated_bufnr and vim.api.nvim_buf_is_valid(evaluated_bufnr) then
       M.highlight_active(evaluated_bufnr, elements)
     end
+    -- Periodically cleanup invalid buffer entries
+    M.cleanup_invalid_buffers()
   end)
+  table.insert(unsubscribers, unsub_active)
 
   -- Clear highlights when disconnected
-  client.on('disconnect', function()
+  local unsub_disconnect = client.on('disconnect', function()
     M.clear_all()
   end)
+  table.insert(unsubscribers, unsub_disconnect)
 
   -- Clear highlights on stop
-  client.on('status', function(msg)
+  local unsub_status = client.on('status', function(msg)
     if msg.playing == false then
       M.clear_all()
     end
   end)
+  table.insert(unsubscribers, unsub_status)
 
   utils.debug('Visualizer setup complete')
+end
+
+---Teardown visualizer and unregister all callbacks
+function M.teardown()
+  -- Unsubscribe all callbacks
+  for _, unsub in ipairs(unsubscribers) do
+    unsub()
+  end
+  unsubscribers = {}
+
+  -- Clear all highlights
+  M.clear_all()
+
+  -- Reset state
+  setup_done = false
+  evaluated_bufnr = nil
+
+  utils.debug('Visualizer teardown complete')
 end
 
 return M

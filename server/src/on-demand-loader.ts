@@ -31,6 +31,18 @@ let drumMachineSampleMap: Record<string, string[]> = {};
 let drumMachineBaseUrl = '';
 let drumMachinesLoaded = false;
 
+// Dirt-Samples from github:tidalcycles/dirt-samples
+// This is the main collection of standard Tidal/SuperDirt samples (bd, sd, hh, etc.)
+let dirtSampleMap: Record<string, string[]> = {};
+let dirtSampleBaseUrl = '';
+let dirtSamplesLoaded = false;
+
+// VCSL - Virtual Community Sample Library
+// High-quality acoustic instrument samples
+let vcslSampleMap: Record<string, string[]> = {};
+let vcslSampleBaseUrl = '';
+let vcslSamplesLoaded = false;
+
 /**
  * Load tidal drum machines metadata (aliases and sample map)
  * This is called once on first use
@@ -97,6 +109,103 @@ export function resolveDrumMachineBankSync(bankAlias: string): string | null {
  */
 export async function ensureDrumMachineMetadataLoaded(): Promise<void> {
   await loadDrumMachineMetadata();
+}
+
+/**
+ * Load Dirt-Samples metadata from github:tidalcycles/dirt-samples
+ * This enables on-demand loading of standard Tidal samples (bd, sd, hh, etc.)
+ */
+async function loadDirtSamplesMetadata(): Promise<void> {
+  if (dirtSamplesLoaded) return;
+
+  try {
+    const jsonUrl = 'https://raw.githubusercontent.com/tidalcycles/dirt-samples/main/strudel.json';
+    const response = await fetch(jsonUrl);
+    const json = await response.json() as Record<string, any>;
+
+    dirtSampleBaseUrl = json._base || 'https://raw.githubusercontent.com/tidalcycles/dirt-samples/main/';
+    delete json._base;
+    dirtSampleMap = json;
+
+    dirtSamplesLoaded = true;
+    console.log(`[on-demand] Loaded Dirt-Samples metadata: ${Object.keys(dirtSampleMap).length} banks`);
+  } catch (err) {
+    console.error('[on-demand] Failed to load Dirt-Samples metadata:', err);
+  }
+}
+
+/**
+ * Ensure Dirt-Samples metadata is loaded
+ */
+export async function ensureDirtSamplesMetadataLoaded(): Promise<void> {
+  await loadDirtSamplesMetadata();
+}
+
+/**
+ * Check if a bank name is a Dirt-Samples bank (bd, sd, hh, etc.)
+ */
+export function isDirtSamplesBank(bankName: string): boolean {
+  return dirtSamplesLoaded && bankName in dirtSampleMap;
+}
+
+/**
+ * Get Dirt-Samples bank info for downloading
+ */
+export async function getDirtSamplesBankInfo(bankName: string): Promise<{ source: Record<string, string[]>; baseUrl: string } | null> {
+  await loadDirtSamplesMetadata();
+
+  const samples = dirtSampleMap[bankName];
+  if (!samples) return null;
+
+  return {
+    source: { [bankName]: samples },
+    baseUrl: dirtSampleBaseUrl,
+  };
+}
+
+/**
+ * Load VCSL metadata from strudel CDN
+ * This enables on-demand loading of VCSL acoustic samples
+ */
+async function loadVcslMetadata(): Promise<void> {
+  if (vcslSamplesLoaded) return;
+
+  try {
+    const jsonUrl = `${baseCDN}/vcsl.json`;
+    const response = await fetch(jsonUrl);
+    const json = await response.json() as Record<string, any>;
+
+    vcslSampleBaseUrl = `${baseCDN}/VCSL/`;
+    delete json._base;
+    vcslSampleMap = json;
+
+    vcslSamplesLoaded = true;
+    console.log(`[on-demand] Loaded VCSL metadata: ${Object.keys(vcslSampleMap).length} banks`);
+  } catch (err) {
+    console.error('[on-demand] Failed to load VCSL metadata:', err);
+  }
+}
+
+/**
+ * Check if a bank name is a VCSL bank
+ */
+export function isVcslBank(bankName: string): boolean {
+  return vcslSamplesLoaded && bankName in vcslSampleMap;
+}
+
+/**
+ * Get VCSL bank info for downloading
+ */
+export async function getVcslBankInfo(bankName: string): Promise<{ source: Record<string, string[]>; baseUrl: string } | null> {
+  await loadVcslMetadata();
+
+  const samples = vcslSampleMap[bankName];
+  if (!samples) return null;
+
+  return {
+    source: { [bankName]: samples },
+    baseUrl: vcslSampleBaseUrl,
+  };
 }
 
 /**
@@ -388,7 +497,37 @@ async function loadSound(name: string): Promise<boolean> {
           }
           return await loadDrumMachineBank(drumInfo.fullBankName);
         }
-        
+
+        // Check if it's a Dirt-Samples bank (bd, sd, hh, sn, cp, etc.)
+        const dirtBankInfo = await getDirtSamplesBankInfo(name);
+        if (dirtBankInfo) {
+          try {
+            const { bankNames } = await loadSamples(dirtBankInfo.source, dirtBankInfo.baseUrl);
+            if (bankNames.length > 0) {
+              console.log(`[on-demand] Loaded Dirt-Samples bank: ${name}`);
+              return true;
+            }
+          } catch (err) {
+            console.error(`[on-demand] Failed to load Dirt-Samples bank ${name}:`, err);
+          }
+          return false;
+        }
+
+        // Check if it's a VCSL bank (timpani, recorder_alto_sus, etc.)
+        const vcslBankInfo = await getVcslBankInfo(name);
+        if (vcslBankInfo) {
+          try {
+            const { bankNames } = await loadSamples(vcslBankInfo.source, vcslBankInfo.baseUrl);
+            if (bankNames.length > 0) {
+              console.log(`[on-demand] Loaded VCSL bank: ${name}`);
+              return true;
+            }
+          } catch (err) {
+            console.error(`[on-demand] Failed to load VCSL bank ${name}:`, err);
+          }
+          return false;
+        }
+
         // Unknown sound - might be a built-in synth or already loaded by strudel-engine
         // We don't need to do anything for these
         console.log(`[on-demand] ${name} is not a known downloadable sound (might be synth or pre-loaded)`);
@@ -424,16 +563,25 @@ export async function loadSoundsForCode(code: string): Promise<string[]> {
     console.log(`[on-demand] Detected banks: ${bankUsage.map(b => `${b.bank}(${b.sounds.join(',')})`).join(', ')}`);
   }
   
+  // Ensure sample metadata is loaded before checking sound names
+  await Promise.all([
+    loadDirtSamplesMetadata(),
+    loadVcslMetadata(),
+  ]);
+
   // For cached soundfonts, ensure metadata is registered (needed for OSC note->n+speed)
   for (const name of soundNames) {
     if (isGmSoundfont(name) && isSoundCached(name)) {
       registerSoundfontFromCache(name);
     }
   }
-  
-  // Load direct sound names (GM soundfonts and known CDN banks)
+
+  // Load direct sound names (GM soundfonts, known CDN banks, Dirt-Samples, and VCSL)
   const directNeedsLoading = Array.from(soundNames).filter(name => {
-    return (isGmSoundfont(name) || isKnownCdnBank(name)) && !isSoundCached(name);
+    // Skip if already cached
+    if (isSoundCached(name)) return false;
+    // Load GM soundfonts, known CDN banks, Dirt-Samples banks, or VCSL banks
+    return isGmSoundfont(name) || isKnownCdnBank(name) || isDirtSamplesBank(name) || isVcslBank(name);
   });
   
   if (directNeedsLoading.length > 0) {

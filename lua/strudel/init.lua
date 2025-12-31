@@ -90,6 +90,12 @@ function M.setup(opts)
   -- Initialize pianoroll (registers callbacks for auto-show behavior)
   require('strudel.pianoroll').init()
 
+  -- Initialize music theory module if enabled
+  local cfg = config.get()
+  if cfg.theory and cfg.theory.enabled ~= false then
+    require('strudel.theory').setup()
+  end
+
   -- Register error handler to show server errors
   local client = require('strudel.client')
   local utils = require('strudel.utils')

@@ -33,6 +33,15 @@
 ---@field path? string Custom log path (default: XDG state dir)
 ---@field level 'debug'|'info'|'warn'|'error' Minimum log level
 
+---@class StrudelTheoryConfig
+---@field enabled boolean Enable music theory features
+---@field default_scope 'line'|'selection'|'buffer' Default analysis scope
+---@field show_degrees boolean Show scale degrees in suggestions
+---@field show_functions boolean Show harmonic functions
+---@field include_secondary boolean Include secondary dominants
+---@field include_substitutions boolean Include chord substitutions
+---@field include_borrowed boolean Include borrowed chords
+
 ---@class StrudelConfig
 ---@field server StrudelServerConfig
 ---@field highlight StrudelHighlightConfig
@@ -41,6 +50,7 @@
 ---@field audio StrudelAudioConfig
 ---@field pianoroll StrudelPianorollConfig
 ---@field log StrudelLogConfig
+---@field theory StrudelTheoryConfig
 ---@field picker 'auto'|'snacks'|'telescope'
 ---@field auto_eval boolean
 ---@field filetypes string[]
@@ -67,7 +77,7 @@ M.defaults = {
     enabled = true,           -- LSP for mini-notation completions/diagnostics
   },
   audio = {
-    output = 'webaudio',      -- 'webaudio' (Node.js) or 'osc' (SuperDirt/SuperCollider)
+    output = 'osc',           -- 'webaudio' (Node.js) or 'osc' (SuperDirt/SuperCollider)
     osc_host = '127.0.0.1',   -- SuperDirt OSC host
     osc_port = 57120,         -- SuperDirt OSC port
     auto_superdirt = true,    -- Auto-start SuperDirt if sclang available
@@ -81,6 +91,15 @@ M.defaults = {
     enabled = false,          -- Enable file logging
     path = nil,               -- Custom path (default: ~/.local/state/nvim/strudel.log)
     level = 'debug',          -- Minimum log level: 'debug', 'info', 'warn', 'error'
+  },
+  theory = {
+    enabled = true,           -- Enable music theory features
+    default_scope = 'line',   -- Default analysis scope: 'line', 'selection', 'buffer'
+    show_degrees = true,      -- Show scale degrees in suggestions
+    show_functions = true,    -- Show harmonic functions (tonic, dominant, etc.)
+    include_secondary = true, -- Include secondary dominants
+    include_substitutions = true, -- Include chord substitutions
+    include_borrowed = true,  -- Include borrowed chords
   },
   picker = 'auto',
   auto_eval = false,
