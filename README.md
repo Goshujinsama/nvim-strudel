@@ -19,11 +19,10 @@ nvim-strudel brings the Strudel live coding music environment to Neovim, providi
 - Neovim >= 0.9.0
 - Node.js >= 18.0
 - Audio output device
-- **SuperCollider** with **SuperDirt** (for audio synthesis)
 
-### Installing Audio Dependencies
+### Optional: SuperCollider for OSC Backend
 
-nvim-strudel uses OSC to send patterns to SuperDirt for audio synthesis. You need SuperCollider and JACK installed. SuperDirt is installed automatically on first run.
+The default Web Audio backend works without additional dependencies. For better performance and audio quality, you can optionally use the OSC backend with SuperCollider/SuperDirt.
 
 **Arch Linux:**
 ```bash
@@ -53,7 +52,7 @@ brew install jack supercollider
 
 ```lua
 {
-    'bathyalecho/nvim-strudel',
+    'Goshujinsama/nvim-strudel',
     ft = 'strudel',
     build = 'cd server && npm install && npm run build',
     keys = {
@@ -88,10 +87,7 @@ require('strudel').setup({
 
   -- Audio output backend
   audio = {
-    output = 'osc',           -- 'osc' (default, SuperDirt) or 'webaudio' (Node.js)
-    osc_host = '127.0.0.1',   -- SuperDirt OSC host
-    osc_port = 57120,         -- SuperDirt OSC port
-    auto_superdirt = true,    -- Auto-start SuperDirt if sclang available
+    output = 'webaudio',      -- 'webaudio' (default, Node.js) or 'osc' (SuperDirt)
   },
 
   -- Visualization highlights
@@ -249,7 +245,7 @@ Define keymaps using lazy.nvim's `keys` spec:
 
 ```lua
 {
-  'bathyalecho/nvim-strudel',
+  'Goshujinsama/nvim-strudel',
   ft = 'strudel',
   build = 'cd server && npm install && npm run build',
   keys = {
@@ -289,34 +285,37 @@ require('strudel').setup({
 
 nvim-strudel supports two audio backends:
 
-### OSC/SuperDirt (Default)
+### Web Audio (Default)
 
-The default backend sends OSC messages to SuperDirt running in SuperCollider. This provides the best performance and audio quality.
-
-**Pros**: Lower CPU usage, better audio quality, access to SuperDirt effects
-**Cons**: Requires SuperCollider installation (see [Requirements](#installing-audio-dependencies))
-
-When you run `:StrudelPlay`, nvim-strudel will automatically:
-- Start JACK on Linux if not already running
-- Launch SuperDirt with optimized settings
-- Install the SuperDirt quark if not already installed
-
-### Web Audio Backend
-
-An alternative backend using Node.js Web Audio API via `node-web-audio-api`. This works without SuperCollider but has higher CPU usage.
+The default backend uses Node.js Web Audio API via `node-web-audio-api`. This works without any additional dependencies.
 
 **Pros**: No external dependencies beyond Node.js
 **Cons**: Higher CPU usage, potential memory growth with heavy effects
 
-To use Web Audio instead of OSC:
+### OSC/SuperDirt
+
+An alternative backend that sends OSC messages to SuperDirt running in SuperCollider. This provides better performance and audio quality.
+
+**Pros**: Lower CPU usage, better audio quality, access to SuperDirt effects
+**Cons**: Requires SuperCollider installation (see [Installing SuperCollider](#optional-supercollidersuperdirt-for-osc-backend))
+
+To use OSC instead of Web Audio:
 
 ```lua
 require('strudel').setup({
   audio = {
-    output = 'webaudio',
+    output = 'osc',
+    osc_host = '127.0.0.1',   -- SuperDirt OSC host (default)
+    osc_port = 57120,         -- SuperDirt OSC port (default)
+    auto_superdirt = true,    -- Auto-start SuperDirt if sclang available
   },
 })
 ```
+
+When you run `:StrudelPlay` with OSC backend, nvim-strudel will automatically:
+- Start JACK on Linux if not already running
+- Launch SuperDirt with optimized settings
+- Install the SuperDirt quark if not already installed
 
 ### Troubleshooting Audio
 
@@ -380,4 +379,3 @@ AGPL-3.0 - Required due to dependency on Strudel libraries.
 
 - [Strudel](https://strudel.cc/) by Felix Roos and contributors
 - [TidalCycles](https://tidalcycles.org/) for the pattern language inspiration
-- Michael Liebenow for the original repo of this fork

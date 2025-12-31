@@ -77,7 +77,7 @@ M.defaults = {
     enabled = true,           -- LSP for mini-notation completions/diagnostics
   },
   audio = {
-    output = 'osc',           -- 'webaudio' (Node.js) or 'osc' (SuperDirt/SuperCollider)
+    output = 'webaudio',      -- 'webaudio' (Node.js, default) or 'osc' (SuperDirt/SuperCollider)
     osc_host = '127.0.0.1',   -- SuperDirt OSC host
     osc_port = 57120,         -- SuperDirt OSC port
     auto_superdirt = true,    -- Auto-start SuperDirt if sclang available

@@ -244,12 +244,20 @@ const PatternProto = Pattern.prototype as any;
 const BundledPatternProto = (core as any).Pattern.prototype;
 
 for (const method of visualizerMethods) {
+  // Create stub function that requests visualization and returns 'this' for chaining
+  const stubFn = function(this: any) { 
+    replControls.requestVisualization();
+    return this; 
+  };
+  
+  // Set on source Pattern (from pattern.mjs)
   if (!PatternProto[method]) {
-    // Request visualization and return 'this' to allow chaining
-    PatternProto[method] = function() { 
-      replControls.requestVisualization();
-      return this; 
-    };
+    PatternProto[method] = stubFn;
+  }
+  
+  // Set on bundled Pattern (from @strudel/core dist) - this is what stack() returns
+  if (!BundledPatternProto[method]) {
+    BundledPatternProto[method] = stubFn;
   }
 }
 console.log('[strudel-engine] Visualizer stubs registered (pianoroll, punchcard, etc.)');
