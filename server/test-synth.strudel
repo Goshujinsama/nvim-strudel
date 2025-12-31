@@ -1,0 +1,23 @@
+// Test pattern for synth sounds (sine, saw, square, triangle)
+// These should work in OSC mode once we add SuperDirt SynthDefs
+
+stack(
+  // Basic waveforms
+  note("c3 e3 g3 c4")
+    .sound("sine")
+    .gain(0.5),
+  
+  note("c2 c2 g2 g2")
+    .sound("sawtooth")
+    .gain(0.3)
+    .lpf(800),
+  
+  note("<c4 e4 g4 b4>")
+    .sound("square")
+    .gain(0.2)
+    .lpf(1200),
+  
+  note("c5*2 e5*2")
+    .sound("triangle")
+    .gain(0.4)
+)

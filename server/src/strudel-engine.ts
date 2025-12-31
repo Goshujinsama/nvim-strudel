@@ -6,7 +6,7 @@ import * as mini from '@strudel/mini';
 import * as tonal from '@strudel/tonal';
 import { transpiler } from '@strudel/transpiler';
 import type { ActiveElement, VisualizationEvent } from './types.js';
-import { initOsc, sendHapToSuperDirt, isOscConnected, closeOsc, setAudioContextStartTime } from './osc-output.js';
+import { initOsc, sendHapToSuperDirt, isOscConnected, closeOsc, setAudioContextStartTime, isSynthSoundForOsc } from './osc-output.js';
 import { writeEngineState, clearEngineState } from './engine-state.js';
 import { loadSamples as loadSamplesForSuperDirt, initSampleManager, notifySuperDirtLoadSamples, setupOscPort } from './sample-manager.js';
 import { loadSoundsForCode, ensureDrumMachineMetadataLoaded, resolveDrumMachineBankSync } from './on-demand-loader.js';
@@ -628,13 +628,18 @@ export class StrudelEngine {
         // Determine the sound name to check if it's a synth
         const soundName = hap.value?.s || '';
         const isSynthSound = synthSounds.has(soundName);
+        
+        // Check if this synth sound can be played via OSC (has SuperDirt SynthDef)
+        const canPlaySynthViaOsc = isSynthSound && isSynthSoundForOsc(soundName);
 
         // Routing logic:
-        // - Synth sounds (sine, sawtooth, etc.) -> Web Audio only (SuperDirt doesn't have these)
+        // - Synth sounds with OSC SynthDefs -> OSC when connected, else Web Audio
+        // - Synth sounds without OSC SynthDefs -> Web Audio only
         // - Sample sounds when OSC connected -> OSC only (avoid double-playing)
         // - Sample sounds when OSC not connected -> Web Audio
-        const useWebAudioForThis = this.webAudioEnabled && (isSynthSound || !this.oscEnabled || !isOscConnected());
-        const useOscForThis = this.oscEnabled && isOscConnected() && !isSynthSound;
+        const oscConnected = this.oscEnabled && isOscConnected();
+        const useOscForThis = oscConnected && (!isSynthSound || canPlaySynthViaOsc);
+        const useWebAudioForThis = this.webAudioEnabled && !useOscForThis;
 
         // Play sound via superdough (Web Audio)
         if (useWebAudioForThis) {

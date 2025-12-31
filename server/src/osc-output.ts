@@ -15,6 +15,28 @@ let isOpen = false;
 let audioContextStartTime: number | null = null; // Unix time when AudioContext was created
 
 /**
+ * Parse a note name like "c4", "d#5", "eb3" into a MIDI note number
+ * Returns undefined if the string is not a valid note name
+ */
+function parseNoteName(name: string): number | undefined {
+  const match = name.toLowerCase().match(/^([a-g])([#bs]?)(-?\d+)?$/);
+  if (!match) return undefined;
+  
+  const noteMap: Record<string, number> = {
+    'c': 0, 'd': 2, 'e': 4, 'f': 5, 'g': 7, 'a': 9, 'b': 11,
+  };
+  
+  let note = noteMap[match[1]];
+  if (note === undefined) return undefined;
+  
+  if (match[2] === '#' || match[2] === 's') note += 1;  // 's' is also used for sharp
+  else if (match[2] === 'b') note -= 1;
+  
+  const octave = match[3] ? parseInt(match[3], 10) : 4;
+  return (octave + 1) * 12 + note;
+}
+
+/**
  * Set the AudioContext start time for clock synchronization
  * Call this once when the AudioContext is created
  */
@@ -89,6 +111,22 @@ export function closeOsc(): void {
  */
 export function isOscConnected(): boolean {
   return isOpen;
+}
+
+/**
+ * Synth sounds that have SuperDirt SynthDefs
+ * These can be routed to OSC instead of requiring Web Audio
+ */
+const oscSynthSounds = new Set([
+  'sine', 'sawtooth', 'saw', 'square', 'triangle', 'tri',
+  'white', 'pink', 'brown'
+]);
+
+/**
+ * Check if a sound name is a synth that can be played via OSC
+ */
+export function isSynthSoundForOsc(soundName: string): boolean {
+  return oscSynthSounds.has(soundName);
 }
 
 /**
@@ -258,6 +296,57 @@ function hapToOscArgs(hap: any, cps: number): any[] {
   // Strudel uses: phaserrate, phaserdepth
   // SuperDirt uses the same names, so no translation needed
   
+  // Handle synth sounds (oscillators)
+  // These use our custom strudel_* SynthDefs instead of sample playback
+  const synthSoundMap: Record<string, string> = {
+    'sine': 'strudel_sine',
+    'sawtooth': 'strudel_sawtooth',
+    'saw': 'strudel_saw',
+    'square': 'strudel_square',
+    'triangle': 'strudel_triangle',
+    'tri': 'strudel_tri',
+    'white': 'strudel_white',
+    'pink': 'strudel_pink',
+    'brown': 'strudel_brown',
+  };
+  
+  const soundName = controls.s || controls.sound;
+  const synthInstrument = soundName ? synthSoundMap[soundName] : undefined;
+  
+  if (synthInstrument) {
+    // For synth sounds, replace 's' with our SynthDef name
+    // SuperDirt will look for a SynthDef with this name when it's not a sample bank
+    controls.s = synthInstrument;
+    delete controls.sound; // Remove alias if present
+    
+    // Synth sounds use freq instead of sample playback
+    // If note is specified, convert to freq (superdough uses MIDI note numbers or note names)
+    if (controls.note !== undefined && controls.freq === undefined) {
+      // Convert note to MIDI number, then to frequency
+      let midiNote: number;
+      if (typeof controls.note === 'number') {
+        midiNote = controls.note;
+      } else if (typeof controls.note === 'string') {
+        // Parse note name like "c4", "d#5", "eb3"
+        const parsed = parseNoteName(controls.note);
+        midiNote = parsed !== undefined ? parsed : 60;
+      } else {
+        midiNote = 60;
+      }
+      controls.freq = 440 * Math.pow(2, (midiNote - 69) / 12);
+    } else if (controls.freq === undefined) {
+      // Default to middle C
+      controls.freq = 261.63;
+    }
+    
+    // Set sustain to note duration for proper envelope
+    controls.sustain = delta;
+    
+    // Delete note since we've converted to freq
+    delete controls.note;
+    delete controls.n; // Synths don't use sample index
+  }
+  
   // Handle soundfont instruments
   // Soundfonts need looping + ADSR envelope, so we use our custom strudel_soundfont synth
   // Regular samples use the default dirt_sample synth (no looping)
@@ -362,14 +451,16 @@ export function sendHapToSuperDirt(hap: any, targetTime: number, cps: number): v
       }
       const speedStr = argsObj.speed?.toFixed?.(4) || argsObj.speed;
       const noteStr = argsObj.note !== undefined ? ` note=${argsObj.note}` : '';
+      const freqStr = argsObj.freq !== undefined ? ` freq=${argsObj.freq?.toFixed?.(1)}` : '';
+      const sustainStr = argsObj.sustain !== undefined ? ` sustain=${argsObj.sustain?.toFixed?.(3)}` : '';
       const tremStr = argsObj.tremolorate !== undefined ? ` tremolorate=${argsObj.tremolorate?.toFixed?.(2)} tremolodepth=${argsObj.tremolodepth}` : '';
-      const envStr = argsObj.attack !== undefined ? ` attack=${argsObj.attack?.toFixed?.(3)} release=${argsObj.release?.toFixed?.(3)} sustain=${argsObj.sustain?.toFixed?.(3)}` : '';
+      const envStr = argsObj.attack !== undefined ? ` attack=${argsObj.attack?.toFixed?.(3)} release=${argsObj.release?.toFixed?.(3)}` : '';
       const sfEnvStr = argsObj.sfSustain !== undefined ? ` sfAttack=${argsObj.sfAttack?.toFixed?.(3)} sfRelease=${argsObj.sfRelease?.toFixed?.(3)} sfSustain=${argsObj.sfSustain?.toFixed?.(3)}` : '';
       const instrStr = argsObj.instrument ? ` instrument=${argsObj.instrument}` : '';
       const orbitStr = argsObj.orbit !== undefined ? ` orbit=${argsObj.orbit}` : ' orbit=MISSING';
       const cutoffStr = argsObj.cutoff !== undefined ? ` cutoff=${argsObj.cutoff?.toFixed?.(0)}` : '';
       const shapeStr = argsObj.shape !== undefined ? ` shape=${argsObj.shape?.toFixed?.(2)}` : '';
-      console.log(`[osc] SEND: s=${argsObj.s} n=${argsObj.n}${orbitStr} speed=${speedStr}${noteStr}${cutoffStr}${shapeStr}${tremStr}${envStr}${sfEnvStr}${instrStr} gain=${argsObj.gain?.toFixed?.(2)} t+${secondsFromNow.toFixed(3)}s`);
+      console.log(`[osc] SEND: s=${argsObj.s} n=${argsObj.n}${orbitStr} speed=${speedStr}${freqStr}${sustainStr}${noteStr}${cutoffStr}${shapeStr}${tremStr}${envStr}${sfEnvStr}${instrStr} gain=${argsObj.gain?.toFixed?.(2)} t+${secondsFromNow.toFixed(3)}s`);
     }
     
     // Send as OSC bundle with timetag for precise scheduling
