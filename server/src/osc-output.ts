@@ -119,7 +119,9 @@ export function isOscConnected(): boolean {
  */
 const oscSynthSounds = new Set([
   'sine', 'sawtooth', 'saw', 'square', 'triangle', 'tri',
-  'white', 'pink', 'brown'
+  'white', 'pink', 'brown',
+  // ZZFX chip sounds
+  'zzfx', 'z_sine', 'z_sawtooth', 'z_triangle', 'z_square', 'z_tan', 'z_noise'
 ]);
 
 /**
@@ -140,18 +142,15 @@ export function getOscPort(): any {
  * Convert superdough-style gain to SuperDirt gain
  * 
  * superdough uses linear gain (default 0.8, pattern gain applied directly)
- * SuperDirt uses: amp = 0.4 * gain^4
+ * SuperDirt's dirt_gate applies: amp = amp * gain^4 (where amp=1 by default)
  * 
- * To match volumes, we invert SuperDirt's curve:
- * If we want output level L, we need: 0.4 * gain^4 = L
- * So: gain = (L / 0.4)^0.25 = (2.5 * L)^0.25
+ * To match volumes, we invert SuperDirt's gain^4 curve:
+ * If we want output level L, we need: gain^4 = L
+ * So: gain = L^0.25
  */
 function convertGainForSuperDirt(superdoughGain: number): number {
-  // superdough default gain is 0.8, so scale relative to that
-  const targetLevel = superdoughGain;
-  // Invert SuperDirt's gain curve: amp = 0.4 * gain^4
-  // gain = (targetLevel / 0.4)^0.25
-  return Math.pow(targetLevel / 0.4, 0.25);
+  // Invert SuperDirt's gain^4 curve: gain = targetLevel^0.25
+  return Math.pow(superdoughGain, 0.25);
 }
 
 /**
@@ -296,6 +295,9 @@ function hapToOscArgs(hap: any, cps: number): any[] {
   // Strudel uses: phaserrate, phaserdepth
   // SuperDirt uses the same names, so no translation needed
   
+  // Track if we should skip gain conversion (for synths that handle their own gain)
+  let skipGainConversion = false;
+  
   // Handle synth sounds (oscillators)
   // These use our custom strudel_* SynthDefs instead of sample playback
   const synthSoundMap: Record<string, string> = {
@@ -308,15 +310,37 @@ function hapToOscArgs(hap: any, cps: number): any[] {
     'white': 'strudel_white',
     'pink': 'strudel_pink',
     'brown': 'strudel_brown',
+    // ZZFX chip sounds - all use strudel_zzfx with different zshape
+    'zzfx': 'strudel_zzfx',
+    'z_sine': 'strudel_zzfx',
+    'z_sawtooth': 'strudel_zzfx',
+    'z_triangle': 'strudel_zzfx',
+    'z_square': 'strudel_zzfx',
+    'z_tan': 'strudel_zzfx',
+    'z_noise': 'strudel_zzfx',
+  };
+  
+  // ZZFX shape mapping: sound name -> zshape value (0-4)
+  // Matches superdough's wave shapes: 0=sin, 1=tri, 2=saw, 3=tan, 4=noise
+  const zzfxShapeMap: Record<string, number> = {
+    'zzfx': 0,        // default to sine
+    'z_sine': 0,
+    'z_triangle': 1,
+    'z_sawtooth': 2,
+    'z_square': 2,    // ZZFX doesn't have square, use saw with shapeCurve=0
+    'z_tan': 3,
+    'z_noise': 4,
   };
   
   const soundName = controls.s || controls.sound;
   const synthInstrument = soundName ? synthSoundMap[soundName] : undefined;
   
   if (synthInstrument) {
-    // For synth sounds, replace 's' with our SynthDef name
-    // SuperDirt will look for a SynthDef with this name when it's not a sample bank
+    // For synth sounds, we need to tell SuperDirt to use our SynthDef
+    // Setting 'instrument' explicitly tells SuperDirt which SynthDef to use
+    // We also set 's' to the synth name for compatibility
     controls.s = synthInstrument;
+    controls.instrument = synthInstrument;  // Explicitly set instrument
     delete controls.sound; // Remove alias if present
     
     // Synth sounds use freq instead of sample playback
@@ -335,12 +359,79 @@ function hapToOscArgs(hap: any, cps: number): any[] {
       }
       controls.freq = 440 * Math.pow(2, (midiNote - 69) / 12);
     } else if (controls.freq === undefined) {
-      // Default to middle C
-      controls.freq = 261.63;
+      // Default frequency depends on synth type
+      // ZZFX defaults to MIDI 36 (C2 = 65.41 Hz) - see superdough/zzfx.mjs line 11
+      // Other synths default to middle C (C4 = 261.63 Hz)
+      if (synthInstrument === 'strudel_zzfx') {
+        controls.freq = 65.41;  // C2 - ZZFX default
+      } else {
+        controls.freq = 261.63; // C4 - standard synth default
+      }
     }
     
-    // Set sustain to note duration for proper envelope
-    controls.sustain = delta;
+    // Handle ZZFX-specific parameters
+    if (synthInstrument === 'strudel_zzfx') {
+      // For ZZFX, Strudel's 'sustain' param is the envelope sustain LEVEL (0-1)
+      // We need to pass it as 'sustainLevel' to the SynthDef
+      // The note duration (delta) goes to 'sustain' (the time parameter)
+      if (controls.sustain !== undefined) {
+        controls.sustainLevel = controls.sustain;
+      }
+      controls.sustain = delta;  // Note duration for envelope timing
+      
+      // Set zshape based on sound name (0=sin, 1=tri, 2=saw, 3=tan, 4=noise)
+      if (controls.zshape === undefined && soundName) {
+        controls.zshape = zzfxShapeMap[soundName] ?? 0;
+      }
+      // For z_square, use saw (shape 2) with shapeCurve 0 to get square-ish wave
+      if (soundName === 'z_square' && controls.zshapeCurve === undefined) {
+        controls.zshapeCurve = 0;
+      }
+      
+      // ZZFX uses linear gain (volume * sustainLevel), not SuperDirt's gain^4 curve
+      // Pass the raw pattern gain as zgain for linear application in SynthDef
+      // We set SuperDirt's gain to 1 so its gain module doesn't affect volume
+      controls.zgain = controls.gain ?? 0.8;
+      controls.gain = 1.0;  // Neutral gain for SuperDirt (1^4 = 1)
+      skipGainConversion = true;  // Don't apply convertGainForSuperDirt
+      
+      // Map Strudel ZZFX params to our SynthDef params
+      // These match the param names from superdough/zzfx.mjs
+      if (controls.slide !== undefined && controls.zslide === undefined) {
+        controls.zslide = controls.slide;
+      }
+      if (controls.deltaSlide !== undefined && controls.zdeltaSlide === undefined) {
+        controls.zdeltaSlide = controls.deltaSlide;
+      }
+      if (controls.curve !== undefined && controls.zshapeCurve === undefined) {
+        controls.zshapeCurve = controls.curve;
+      }
+      if (controls.pitchJump !== undefined && controls.zpitchJump === undefined) {
+        controls.zpitchJump = controls.pitchJump;
+      }
+      if (controls.pitchJumpTime !== undefined && controls.zpitchJumpTime === undefined) {
+        controls.zpitchJumpTime = controls.pitchJumpTime;
+      }
+      // znoise, zmod, zrand are passed through as-is (already prefixed with z)
+    } else {
+      // For non-ZZFX synths (sine, saw, etc.), sustain is the note duration
+      controls.sustain = delta;
+    }
+    
+    // SuperDirt's dirt_envelope module is triggered when attack or release are set.
+    // It uses Env.linen(attack, hold, release) where 'hold' is the sustain portion.
+    // If we don't set 'hold', it defaults to 0, making the sound very short!
+    // 
+    // In superdough/ZZFX, release extends PAST the note duration:
+    //   sustainTime = duration - attack - decay
+    //   totalLength = attack + decay + sustainTime + release = duration + release
+    // 
+    // So for SuperDirt's dirt_envelope, we want:
+    //   hold = duration - attack (release will extend past)
+    if (controls.attack !== undefined || controls.release !== undefined) {
+      const attack = controls.attack ?? 0;
+      controls.hold = Math.max(0, delta - attack);
+    }
     
     // Delete note since we've converted to freq
     delete controls.note;
@@ -386,8 +477,11 @@ function hapToOscArgs(hap: any, cps: number): any[] {
     controls.gain = controls.gain * 0.3;
   }
   
-  // Now convert gain to SuperDirt's gain curve (applies to all sounds)
-  controls.gain = convertGainForSuperDirt(controls.gain);
+  // Now convert gain to SuperDirt's gain curve (applies to most sounds)
+  // Skip for ZZFX which handles its own linear gain via zgain
+  if (!skipGainConversion) {
+    controls.gain = convertGainForSuperDirt(controls.gain);
+  }
 
   // Flatten to array of [key, value, key, value, ...]
   const args: any[] = [];
@@ -460,7 +554,10 @@ export function sendHapToSuperDirt(hap: any, targetTime: number, cps: number): v
       const orbitStr = argsObj.orbit !== undefined ? ` orbit=${argsObj.orbit}` : ' orbit=MISSING';
       const cutoffStr = argsObj.cutoff !== undefined ? ` cutoff=${argsObj.cutoff?.toFixed?.(0)}` : '';
       const shapeStr = argsObj.shape !== undefined ? ` shape=${argsObj.shape?.toFixed?.(2)}` : '';
-      console.log(`[osc] SEND: s=${argsObj.s} n=${argsObj.n}${orbitStr} speed=${speedStr}${freqStr}${sustainStr}${noteStr}${cutoffStr}${shapeStr}${tremStr}${envStr}${sfEnvStr}${instrStr} gain=${argsObj.gain?.toFixed?.(2)} t+${secondsFromNow.toFixed(3)}s`);
+      const zshapeStr = argsObj.zshape !== undefined ? ` zshape=${argsObj.zshape}` : '';
+      const zgainStr = argsObj.zgain !== undefined ? ` zgain=${argsObj.zgain?.toFixed?.(2)}` : '';
+      const sustainLevelStr = argsObj.sustainLevel !== undefined ? ` sustainLevel=${argsObj.sustainLevel?.toFixed?.(2)}` : '';
+      console.log(`[osc] SEND: s=${argsObj.s} n=${argsObj.n}${orbitStr} speed=${speedStr}${freqStr}${sustainStr}${sustainLevelStr}${noteStr}${cutoffStr}${shapeStr}${zshapeStr}${zgainStr}${tremStr}${envStr}${sfEnvStr}${instrStr} gain=${argsObj.gain?.toFixed?.(2)} t+${secondsFromNow.toFixed(3)}s`);
     }
     
     // Send as OSC bundle with timetag for precise scheduling

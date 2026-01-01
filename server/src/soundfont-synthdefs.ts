@@ -19,9 +19,10 @@ export function generateSoundfontSynthDef(
   
   return `
 // ${instrumentName} with ADSR envelope support
+// Note: We only apply amp (base headroom), NOT gain^4 - dirt_gate handles pattern gain
 SynthDef("${synthName}", { |out, bufnum, sustain = 1, speed = 1, freq = 440, pan = 0,
                            attack = 0.001, decay = 0.1, sustainLevel = 1, release = 0.01,
-                           begin = 0, end = 1, gain = 1, amp = 0.4|
+                           begin = 0, end = 1, amp = 0.4|
   var sound, rate, phase, frames, env, totalTime;
   
   // Calculate playback rate (freq relative to middle C = MIDI 60)
@@ -49,11 +50,11 @@ SynthDef("${synthName}", { |out, bufnum, sustain = 1, speed = 1, freq = 440, pan
   
   sound = BufRd.ar(${numSampleChannels}, bufnum, phase, loop: 1, interpolation: 4);
   
-  // Apply envelope and gain
-  sound = sound * env * amp * pow(gain, 4);
+  // Apply envelope and base amplitude (dirt_gate handles pattern gain)
+  sound = sound * env * amp;
   
   Out.ar(out, DirtPan.ar(sound, ${numOutputChannels}, pan));
-}, [\\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
+}, [\\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr]).add;
 
 "Added: ${synthName}".postln;
 `;
@@ -103,6 +104,7 @@ var numChannels = ~dirt.numChannels;
 /**
  * Generate a simpler attack/release synth (no decay/sustain level)
  * This is more commonly needed and matches the Env.linen shape
+ * Note: We only apply amp (base headroom), NOT gain^4 - dirt_gate handles pattern gain
  */
 export function generateSimpleSoundfontSynthDef(
   instrumentName: string,
@@ -113,9 +115,10 @@ export function generateSimpleSoundfontSynthDef(
   
   return `
 // ${instrumentName} with attack/release envelope
+// Note: We only apply amp (base headroom), NOT gain^4 - dirt_gate handles pattern gain
 SynthDef("${synthName}", { |out, bufnum, sustain = 1, speed = 1, freq = 440, pan = 0,
                            attack = 0.001, release = 0.01, begin = 0, end = 1,
-                           gain = 1, amp = 0.4|
+                           amp = 0.4|
   var sound, rate, phase, frames, env, holdTime;
   
   rate = speed * (freq / 60.midicps) * BufRateScale.ir(bufnum);
@@ -135,10 +138,10 @@ SynthDef("${synthName}", { |out, bufnum, sustain = 1, speed = 1, freq = 440, pan
                     begin * frames, end * frames, begin * frames);
   
   sound = BufRd.ar(${numSampleChannels}, bufnum, phase, loop: 1, interpolation: 4);
-  sound = sound * env * amp * pow(gain, 4);
+  sound = sound * env * amp;
   
   Out.ar(out, DirtPan.ar(sound, ${numOutputChannels}, pan));
-}, [\\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
+}, [\\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\kr]).add;
 
 "Added: ${synthName}".postln;
 `;

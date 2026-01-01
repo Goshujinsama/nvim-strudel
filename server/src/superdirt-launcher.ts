@@ -189,6 +189,7 @@ s.waitForBoot {
       ("Strudel: Added " ++ name).postln;
     };
     
+    s.sync;  // Ensure soundfont SynthDefs are registered with server
     "*** Strudel soundfont SynthDefs loaded ***".postln;
     
     // ========================================
@@ -197,141 +198,271 @@ s.waitForBoot {
     // ========================================
     
     // Sine wave oscillator
+    // Note: We only apply amp (base headroom), NOT gain^4 - dirt_gate handles pattern gain
     SynthDef(\\strudel_sine, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                               gain = 1, amp = 0.4, lpf = 20000, hpf = 0|
+                               amp = 0.4, lpf = 20000, hpf = 0|
       var sound, env, holdTime;
       holdTime = max(0.001, sustain - attack - release);
       env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
       sound = SinOsc.ar(freq * speed);
       sound = LPF.ar(sound, lpf.clip(20, 20000));
       sound = HPF.ar(sound, hpf.clip(20, 20000));
-      sound = sound * env * amp * pow(gain, 4);
+      sound = sound * env * amp;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr, \\kr]).add;
+    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr]).add;
     "Added: strudel_sine".postln;
     
     // Sawtooth wave oscillator
+    // Note: We only apply amp (base headroom), NOT gain^4 - dirt_gate handles pattern gain
     SynthDef(\\strudel_sawtooth, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                    attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                                   gain = 1, amp = 0.4, lpf = 20000, hpf = 0|
+                                   amp = 0.4, lpf = 20000, hpf = 0|
       var sound, env, holdTime;
       holdTime = max(0.001, sustain - attack - release);
       env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
       sound = Saw.ar(freq * speed);
       sound = LPF.ar(sound, lpf.clip(20, 20000));
       sound = HPF.ar(sound, hpf.clip(20, 20000));
-      sound = sound * env * amp * pow(gain, 4);
+      sound = sound * env * amp;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr, \\kr]).add;
+    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr]).add;
     "Added: strudel_sawtooth".postln;
     
     // Alias for sawtooth (superdough uses 'saw')
+    // Note: We only apply amp (base headroom), NOT gain^4 - dirt_gate handles pattern gain
     SynthDef(\\strudel_saw, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                               attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                              gain = 1, amp = 0.4, lpf = 20000, hpf = 0|
+                              amp = 0.4, lpf = 20000, hpf = 0|
       var sound, env, holdTime;
       holdTime = max(0.001, sustain - attack - release);
       env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
       sound = Saw.ar(freq * speed);
       sound = LPF.ar(sound, lpf.clip(20, 20000));
       sound = HPF.ar(sound, hpf.clip(20, 20000));
-      sound = sound * env * amp * pow(gain, 4);
+      sound = sound * env * amp;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr, \\kr]).add;
+    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr]).add;
     "Added: strudel_saw".postln;
     
     // Square wave oscillator
+    // Note: We only apply amp (base headroom), NOT gain^4 - dirt_gate handles pattern gain
     SynthDef(\\strudel_square, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                  attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                                 gain = 1, amp = 0.4, lpf = 20000, hpf = 0|
+                                 amp = 0.4, lpf = 20000, hpf = 0|
       var sound, env, holdTime;
       holdTime = max(0.001, sustain - attack - release);
       env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
       sound = Pulse.ar(freq * speed, 0.5);
       sound = LPF.ar(sound, lpf.clip(20, 20000));
       sound = HPF.ar(sound, hpf.clip(20, 20000));
-      sound = sound * env * amp * pow(gain, 4);
+      sound = sound * env * amp;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr, \\kr]).add;
+    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr]).add;
     "Added: strudel_square".postln;
     
     // Triangle wave oscillator
+    // Note: We only apply amp (base headroom), NOT gain^4 - dirt_gate handles pattern gain
     SynthDef(\\strudel_triangle, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                    attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                                   gain = 1, amp = 0.4, lpf = 20000, hpf = 0|
+                                   amp = 0.4, lpf = 20000, hpf = 0|
       var sound, env, holdTime;
       holdTime = max(0.001, sustain - attack - release);
       env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
       sound = LFTri.ar(freq * speed);
       sound = LPF.ar(sound, lpf.clip(20, 20000));
       sound = HPF.ar(sound, hpf.clip(20, 20000));
-      sound = sound * env * amp * pow(gain, 4);
+      sound = sound * env * amp;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr, \\kr]).add;
+    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr]).add;
     "Added: strudel_triangle".postln;
     
     // Alias for triangle (superdough uses 'tri')
+    // Note: We only apply amp (base headroom), NOT gain^4 - dirt_gate handles pattern gain
     SynthDef(\\strudel_tri, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                               attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                              gain = 1, amp = 0.4, lpf = 20000, hpf = 0|
+                              amp = 0.4, lpf = 20000, hpf = 0|
       var sound, env, holdTime;
       holdTime = max(0.001, sustain - attack - release);
       env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
       sound = LFTri.ar(freq * speed);
       sound = LPF.ar(sound, lpf.clip(20, 20000));
       sound = HPF.ar(sound, hpf.clip(20, 20000));
-      sound = sound * env * amp * pow(gain, 4);
+      sound = sound * env * amp;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr, \\kr]).add;
+    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr]).add;
     "Added: strudel_tri".postln;
     
     // White noise generator
+    // Note: We only apply amp (base headroom), NOT gain^4 - dirt_gate handles pattern gain
     SynthDef(\\strudel_white, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                 attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                                gain = 1, amp = 0.4, lpf = 20000, hpf = 0|
+                                amp = 0.4, lpf = 20000, hpf = 0|
       var sound, env, holdTime;
       holdTime = max(0.001, sustain - attack - release);
       env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
       sound = WhiteNoise.ar;
       sound = LPF.ar(sound, lpf.clip(20, 20000));
       sound = HPF.ar(sound, hpf.clip(20, 20000));
-      sound = sound * env * amp * pow(gain, 4);
+      sound = sound * env * amp;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr, \\kr]).add;
+    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr]).add;
     "Added: strudel_white".postln;
     
     // Pink noise generator
+    // Note: We only apply amp (base headroom), NOT gain^4 - dirt_gate handles pattern gain
     SynthDef(\\strudel_pink, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                               gain = 1, amp = 0.4, lpf = 20000, hpf = 0|
+                               amp = 0.4, lpf = 20000, hpf = 0|
       var sound, env, holdTime;
       holdTime = max(0.001, sustain - attack - release);
       env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
       sound = PinkNoise.ar;
       sound = LPF.ar(sound, lpf.clip(20, 20000));
       sound = HPF.ar(sound, hpf.clip(20, 20000));
-      sound = sound * env * amp * pow(gain, 4);
+      sound = sound * env * amp;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr, \\kr]).add;
+    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr]).add;
     "Added: strudel_pink".postln;
     
     // Brown noise generator
+    // Note: We only apply amp (base headroom), NOT gain^4 - dirt_gate handles pattern gain
     SynthDef(\\strudel_brown, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                 attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                                gain = 1, amp = 0.4, lpf = 20000, hpf = 0|
+                                amp = 0.4, lpf = 20000, hpf = 0|
       var sound, env, holdTime;
       holdTime = max(0.001, sustain - attack - release);
       env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
       sound = BrownNoise.ar;
       sound = LPF.ar(sound, lpf.clip(20, 20000));
       sound = HPF.ar(sound, hpf.clip(20, 20000));
-      sound = sound * env * amp * pow(gain, 4);
+      sound = sound * env * amp;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr, \\kr]).add;
+    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr]).add;
     "Added: strudel_brown".postln;
     
+    s.sync;  // Ensure oscillator SynthDefs are registered with server
     "*** Strudel oscillator SynthDefs loaded ***".postln;
+    
+    // ========================================
+    // ZZFX Chip Sound Synth
+    // Exact port of ZzFX algorithm from zzfx_fork.mjs
+    // https://github.com/KilledByAPixel/ZzFX
+    // ========================================
+    
+    SynthDef(\\strudel_zzfx, { |out, freq = 220, sustain = 1, pan = 0,
+                               attack = 0, decay = 0, sustainLevel = 0.8, release = 0.1,
+                               gain = 1, amp = 0.25, lpf = 20000, hpf = 0, zgain = 0.8,
+                               zshape = 0, zshapeCurve = 1, zslide = 0, zdeltaSlide = 0,
+                               zrand = 0, znoise = 0, zmod = 0,
+                               zpitchJump = 0, zpitchJumpTime = 0|
+      var sound, env, holdTime, envShape;
+      var pi2, sampleRate;
+      var freqRadians, slide, deltaSlide, modulation, noise;
+      var phase, freqAccum, slideAccum, modPhase, f;
+      var waveSin, waveTri, waveSaw, waveTan, waveNoise;
+      var sampleIndex;
+      
+      pi2 = 2pi;
+      sampleRate = SampleRate.ir;
+      
+      // Convert frequency to radians/sample (like ZZFX line 32)
+      // frequency *= ((1 + randomness*2*random - randomness) * PI2) / sampleRate
+      freqRadians = freq * (1 + (zrand * 2 * Rand(-1, 1))) * pi2 / sampleRate;
+      
+      // Scale slide params (like ZZFX lines 31, 50)
+      // slide *= (500 * PI2) / sampleRate / sampleRate
+      slide = zslide * (500 * pi2) / (sampleRate * sampleRate);
+      // deltaSlide *= (500 * PI2) / sampleRate^3
+      deltaSlide = zdeltaSlide * (500 * pi2) / (sampleRate ** 3);
+      
+      // modulation *= PI2 / sampleRate
+      modulation = zmod * pi2 / sampleRate;
+      
+      // noise param (for phase jitter)
+      noise = znoise;
+      
+      // Phase accumulator using Integrator for cumulative slide
+      // ZZFX: frequency += slide += deltaSlide (each sample)
+      // slideAccum accumulates deltaSlide each sample
+      slideAccum = Integrator.ar(K2A.ar(deltaSlide), 1) + slide;
+      // freqAccum accumulates slideAccum each sample, starting from freqRadians  
+      freqAccum = Integrator.ar(slideAccum, 1) + freqRadians;
+      
+      // Modulation: f = frequency * cos(modulation * tm++)
+      modPhase = Phasor.ar(0, modulation, 0, inf);
+      f = freqAccum * cos(modPhase);
+      
+      // Phase with noise jitter (ZZFX line 102):
+      // t += f - f * noise * (1 - (((sin(i) + 1) * 1e9) % 2))
+      // The noise term creates random phase jitter
+      sampleIndex = Phasor.ar(0, 1, 0, inf);
+      phase = Integrator.ar(
+        f * (1 - (noise * (1 - (((sin(sampleIndex) + 1) * 1e9) % 2)))),
+        1
+      );
+      
+      // ZZFX waveform formulas (exact from zzfx_fork.mjs lines 60-68):
+      // shape 0: sin(t)
+      waveSin = sin(phase);
+      
+      // shape 1: 1 - 4 * abs(round(t/2π) - t/2π)
+      // Note: SC's .round needs argument for integer rounding
+      waveTri = 1 - (4 * abs((phase / pi2).round(1) - (phase / pi2)));
+      
+      // shape 2: 1 - ((((2*t/2π) % 2) + 2) % 2)
+      waveSaw = 1 - (((((2 * phase / pi2) % 2) + 2) % 2));
+      
+      // shape 3: max(min(tan(t), 1), -1)
+      waveTan = tan(phase).clip(-1, 1);
+      
+      // shape 4: sin((t % 2π)^3)
+      waveNoise = sin(((phase % pi2) ** 3));
+      
+      // Select waveform based on zshape
+      sound = Select.ar(zshape.clip(0, 4), [
+        waveSin,    // 0
+        waveTri,    // 1
+        waveSaw,    // 2
+        waveTan,    // 3
+        waveNoise   // 4
+      ]);
+      
+      // Apply shape curve (ZZFX line 75): sign(s) * abs(s)^shapeCurve
+      sound = sound.sign * (sound.abs ** zshapeCurve.max(0.01));
+      
+      // ZZFX envelope (lines 78-87):
+      // attack -> decay (to sustainLevel) -> sustain (at sustainLevel) -> release
+      // Note: ZZFX adds 9 samples minimum attack to prevent pop
+      // 
+      // In ZZFX/superdough: sustainTime = duration - attack - decay (zzfx.mjs:32)
+      // Total length = attack + decay + sustainTime + release = duration + release
+      // So release extends PAST the note duration, giving a natural fade.
+      // We match this by calculating holdTime as: sustain - attack - decay (not subtracting release)
+      holdTime = max(0.001, sustain - attack - decay);
+      envShape = Env(
+        [0, 1, sustainLevel, sustainLevel, 0],
+        [attack.max(9/sampleRate), decay.max(0.0001), holdTime, release.max(0.0001)],
+        \\lin  // ZZFX uses linear envelope segments
+      );
+      env = EnvGen.ar(envShape, doneAction: 2);
+      
+      // Apply volume and envelope
+      // ZZFX uses linear gain (volume * gain), not SuperDirt's gain^4 curve
+      // amp = 0.25 (ZZFX default volume), zgain is linear gain from pattern
+      sound = sound * env * amp * zgain;
+      
+      // Apply filters
+      sound = LPF.ar(sound, lpf.clip(20, 20000));
+      sound = HPF.ar(sound, hpf.clip(20, 20000));
+      
+      Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
+    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr, \\kr,
+        \\ir, \\ir, \\ir, \\ir, \\ir, \\ir, \\ir, \\ir, \\ir, \\ir]).add;
+    "Added: strudel_zzfx".postln;
+    
+    s.sync;  // Ensure ZZFX SynthDef is registered with server
+    "*** Strudel ZZFX SynthDef loaded ***".postln;
     
     // ========================================
     // OSC Handlers
