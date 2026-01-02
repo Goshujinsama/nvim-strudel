@@ -424,6 +424,11 @@ function hapToOscArgs(hap: any, cps: number): any[] {
     } else {
       // For non-ZZFX synths (sine, saw, etc.), sustain is the note duration
       controls.sustain = delta;
+      
+      // Apply superdough's oscillator gain reduction (0.3) here instead of in SynthDef
+      // This matches synth.mjs: const g = gainNode(0.3);
+      // The gain will then go through convertGainForSuperDirt() for the gain^4 curve
+      controls.gain = (controls.gain ?? 0.8) * 0.3;
     }
     
     // SuperDirt's dirt_envelope module is triggered when attack or release are set.

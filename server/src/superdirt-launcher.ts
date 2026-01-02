@@ -198,8 +198,8 @@ s.waitForBoot {
     // ========================================
     
     // Sine wave oscillator
-    // Note: dirt_gate handles amp * gain^4, we only apply envelope
-    // The 0.3 factor matches superdough's oscillator gain reduction (synth.mjs)
+    // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
+    // dirt_gate applies amp * gain^4, we only apply envelope here
     SynthDef(\\strudel_sine, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
                                lpf = 20000, hpf = 0|
@@ -209,14 +209,14 @@ s.waitForBoot {
       sound = SinOsc.ar(freq * speed);
       sound = LPF.ar(sound, lpf.clip(20, 20000));
       sound = HPF.ar(sound, hpf.clip(20, 20000));
-      sound = sound * env * 0.3;
+      sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
     "Added: strudel_sine".postln;
     
     // Sawtooth wave oscillator
-    // Note: dirt_gate handles amp * gain^4, we only apply envelope
-    // The 0.3 factor matches superdough's oscillator gain reduction (synth.mjs)
+    // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
+    // dirt_gate applies amp * gain^4, we only apply envelope here
     SynthDef(\\strudel_sawtooth, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                    attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
                                    lpf = 20000, hpf = 0|
@@ -226,14 +226,14 @@ s.waitForBoot {
       sound = Saw.ar(freq * speed);
       sound = LPF.ar(sound, lpf.clip(20, 20000));
       sound = HPF.ar(sound, hpf.clip(20, 20000));
-      sound = sound * env * 0.3;
+      sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
     "Added: strudel_sawtooth".postln;
     
     // Alias for sawtooth (superdough uses 'saw')
-    // Note: dirt_gate handles amp * gain^4, we only apply envelope
-    // The 0.3 factor matches superdough's oscillator gain reduction (synth.mjs)
+    // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
+    // dirt_gate applies amp * gain^4, we only apply envelope here
     SynthDef(\\strudel_saw, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                               attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
                               lpf = 20000, hpf = 0|
@@ -243,14 +243,14 @@ s.waitForBoot {
       sound = Saw.ar(freq * speed);
       sound = LPF.ar(sound, lpf.clip(20, 20000));
       sound = HPF.ar(sound, hpf.clip(20, 20000));
-      sound = sound * env * 0.3;
+      sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
     "Added: strudel_saw".postln;
     
     // Square wave oscillator
-    // Note: dirt_gate handles amp * gain^4, we only apply envelope
-    // The 0.3 factor matches superdough's oscillator gain reduction (synth.mjs)
+    // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
+    // dirt_gate applies amp * gain^4, we only apply envelope here
     SynthDef(\\strudel_square, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                  attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
                                  lpf = 20000, hpf = 0|
@@ -260,14 +260,14 @@ s.waitForBoot {
       sound = Pulse.ar(freq * speed, 0.5);
       sound = LPF.ar(sound, lpf.clip(20, 20000));
       sound = HPF.ar(sound, hpf.clip(20, 20000));
-      sound = sound * env * 0.3;
+      sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
     "Added: strudel_square".postln;
     
     // Triangle wave oscillator
-    // Note: dirt_gate handles amp * gain^4, we only apply envelope
-    // The 0.3 factor matches superdough's oscillator gain reduction (synth.mjs)
+    // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
+    // dirt_gate applies amp * gain^4, we only apply envelope here
     SynthDef(\\strudel_triangle, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                    attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
                                    lpf = 20000, hpf = 0|
@@ -277,14 +277,14 @@ s.waitForBoot {
       sound = LFTri.ar(freq * speed);
       sound = LPF.ar(sound, lpf.clip(20, 20000));
       sound = HPF.ar(sound, hpf.clip(20, 20000));
-      sound = sound * env * 0.3;
+      sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
     "Added: strudel_triangle".postln;
     
     // Alias for triangle (superdough uses 'tri')
-    // Note: dirt_gate handles amp * gain^4, we only apply envelope
-    // The 0.3 factor matches superdough's oscillator gain reduction (synth.mjs)
+    // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
+    // dirt_gate applies amp * gain^4, we only apply envelope here
     SynthDef(\\strudel_tri, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                               attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
                               lpf = 20000, hpf = 0|
@@ -294,14 +294,14 @@ s.waitForBoot {
       sound = LFTri.ar(freq * speed);
       sound = LPF.ar(sound, lpf.clip(20, 20000));
       sound = HPF.ar(sound, hpf.clip(20, 20000));
-      sound = sound * env * 0.3;
+      sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
     "Added: strudel_tri".postln;
     
     // White noise generator
-    // Note: dirt_gate handles amp * gain^4, we only apply envelope
-    // The 0.3 factor matches superdough's oscillator gain reduction (synth.mjs)
+    // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
+    // dirt_gate applies amp * gain^4, we only apply envelope here
     SynthDef(\\strudel_white, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                 attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
                                 lpf = 20000, hpf = 0|
@@ -311,14 +311,14 @@ s.waitForBoot {
       sound = WhiteNoise.ar;
       sound = LPF.ar(sound, lpf.clip(20, 20000));
       sound = HPF.ar(sound, hpf.clip(20, 20000));
-      sound = sound * env * 0.3;
+      sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
     "Added: strudel_white".postln;
     
     // Pink noise generator
-    // Note: dirt_gate handles amp * gain^4, we only apply envelope
-    // The 0.3 factor matches superdough's oscillator gain reduction (synth.mjs)
+    // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
+    // dirt_gate applies amp * gain^4, we only apply envelope here
     SynthDef(\\strudel_pink, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
                                lpf = 20000, hpf = 0|
@@ -328,14 +328,14 @@ s.waitForBoot {
       sound = PinkNoise.ar;
       sound = LPF.ar(sound, lpf.clip(20, 20000));
       sound = HPF.ar(sound, hpf.clip(20, 20000));
-      sound = sound * env * 0.3;
+      sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
     "Added: strudel_pink".postln;
     
     // Brown noise generator
-    // Note: dirt_gate handles amp * gain^4, we only apply envelope
-    // The 0.3 factor matches superdough's oscillator gain reduction (synth.mjs)
+    // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
+    // dirt_gate applies amp * gain^4, we only apply envelope here
     SynthDef(\\strudel_brown, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                 attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
                                 lpf = 20000, hpf = 0|
@@ -345,7 +345,7 @@ s.waitForBoot {
       sound = BrownNoise.ar;
       sound = LPF.ar(sound, lpf.clip(20, 20000));
       sound = HPF.ar(sound, hpf.clip(20, 20000));
-      sound = sound * env * 0.3;
+      sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
     "Added: strudel_brown".postln;
