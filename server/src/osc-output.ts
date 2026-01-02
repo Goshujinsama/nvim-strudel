@@ -367,14 +367,10 @@ function hapToOscArgs(hap: any, cps: number): any[] {
       }
       controls.freq = 440 * Math.pow(2, (midiNote - 69) / 12);
     } else if (controls.freq === undefined) {
-      // Default frequency depends on synth type
-      // ZZFX defaults to MIDI 36 (C2 = 65.41 Hz) - see superdough/zzfx.mjs line 11
-      // Other synths default to middle C (C4 = 261.63 Hz)
-      if (synthInstrument === 'strudel_zzfx') {
-        controls.freq = 65.41;  // C2 - ZZFX default
-      } else {
-        controls.freq = 261.63; // C4 - standard synth default
-      }
+      // Default frequency: MIDI note 36 (C2 = 65.41 Hz)
+      // This matches superdough's synth.mjs default: note: o = 36
+      // All synths (including ZZFX) use the same default
+      controls.freq = 65.41;  // C2 - superdough default for all synths
     }
     
     // Handle ZZFX-specific parameters
@@ -422,28 +418,43 @@ function hapToOscArgs(hap: any, cps: number): any[] {
       }
       // znoise, zmod, zrand are passed through as-is (already prefixed with z)
     } else {
-      // For non-ZZFX synths (sine, saw, etc.), sustain is the note duration
-      controls.sustain = delta;
+      // For non-ZZFX synths (sine, saw, etc.)
       
       // Apply superdough's oscillator gain reduction (0.3) here instead of in SynthDef
       // This matches synth.mjs: const g = gainNode(0.3);
       // The gain will then go through convertGainForSuperDirt() for the gain^4 curve
       controls.gain = (controls.gain ?? 0.8) * 0.3;
-    }
-    
-    // SuperDirt's dirt_envelope module is triggered when attack or release are set.
-    // It uses Env.linen(attack, hold, release) where 'hold' is the sustain portion.
-    // If we don't set 'hold', it defaults to 0, making the sound very short!
-    // 
-    // In superdough/ZZFX, release extends PAST the note duration:
-    //   sustainTime = duration - attack - decay
-    //   totalLength = attack + decay + sustainTime + release = duration + release
-    // 
-    // So for SuperDirt's dirt_envelope, we want:
-    //   hold = duration - attack (release will extend past)
-    if (controls.attack !== undefined || controls.release !== undefined) {
-      const attack = controls.attack ?? 0;
-      controls.hold = Math.max(0, delta - attack);
+      
+      // Calculate ADSR values matching superdough's getADSRValues behavior
+      // This ensures sustainLevel is set correctly based on which params are specified
+      // IMPORTANT: Check rawValue.sustain BEFORE we overwrite controls.sustain with delta
+      const patternSustainLevel = typeof rawValue.sustain === 'number' ? rawValue.sustain : undefined;
+      const [envAttack, envDecay, envSustainLevel, envRelease] = getADSRValues(
+        controls.attack,
+        controls.decay,
+        patternSustainLevel,  // sustain LEVEL from pattern (0-1), not duration
+        controls.release
+      );
+      
+      // Calculate hold time: duration - attack - decay (release extends past)
+      const holdTime = Math.max(0.001, delta - envAttack - envDecay);
+      
+      // Use our custom strudelEnv* params to avoid triggering SuperDirt's dirt_envelope
+      // This gives us consistent ADSR behavior for both synths and samples
+      controls.strudelEnvAttack = envAttack;
+      controls.strudelEnvDecay = envDecay;
+      controls.strudelEnvSustainLevel = envSustainLevel;
+      controls.strudelEnvRelease = envRelease;
+      controls.strudelEnvHold = holdTime;
+      
+      // Now set sustain to note duration (for SynthDef timing)
+      // This controls how long the synth runs before doneAction frees it
+      controls.sustain = delta;
+      
+      // Delete standard envelope params to prevent SuperDirt's dirt_envelope from triggering
+      delete controls.attack;
+      delete controls.decay;
+      delete controls.release;
     }
     
     // Delete note since we've converted to freq
@@ -488,6 +499,37 @@ function hapToOscArgs(hap: any, cps: number): any[] {
     // This compensates for soundfont samples being normalized louder than Dirt-Samples
     // Apply BEFORE converting to SuperDirt gain curve
     controls.gain = controls.gain * 0.3;
+  } else if (!synthInstrument) {
+    // Regular samples (not synths, not soundfonts)
+    // If attack/release are specified, use our strudel_adsr module instead of dirt_envelope
+    // This gives us consistent linear ADSR behavior matching superdough
+    if (rawValue.attack !== undefined || rawValue.release !== undefined || 
+        rawValue.decay !== undefined || rawValue.sustain !== undefined) {
+      // Calculate ADSR values matching superdough's getADSRValues behavior
+      const patternSustainLevel = typeof rawValue.sustain === 'number' ? rawValue.sustain : undefined;
+      const [envAttack, envDecay, envSustainLevel, envRelease] = getADSRValues(
+        controls.attack,
+        controls.decay,
+        patternSustainLevel,
+        controls.release
+      );
+      
+      // Calculate hold time: duration - attack - decay (release extends past)
+      const holdTime = Math.max(0.001, delta - envAttack - envDecay);
+      
+      // Use our custom strudelEnv* params to trigger strudel_adsr module
+      controls.strudelEnvAttack = envAttack;
+      controls.strudelEnvDecay = envDecay;
+      controls.strudelEnvSustainLevel = envSustainLevel;
+      controls.strudelEnvRelease = envRelease;
+      controls.strudelEnvHold = holdTime;
+      
+      // Delete standard envelope params to prevent dirt_envelope from triggering
+      delete controls.attack;
+      delete controls.decay;
+      delete controls.sustain;
+      delete controls.release;
+    }
   }
   
   // Now convert gain to SuperDirt's gain curve (applies to most sounds)
@@ -568,7 +610,9 @@ export function sendHapToSuperDirt(hap: any, targetTime: number, cps: number): v
       const freqStr = argsObj.freq !== undefined ? ` freq=${argsObj.freq?.toFixed?.(1)}` : '';
       const sustainStr = argsObj.sustain !== undefined ? ` sustain=${argsObj.sustain?.toFixed?.(3)}` : '';
       const tremStr = argsObj.tremolorate !== undefined ? ` tremolorate=${argsObj.tremolorate?.toFixed?.(2)} tremolodepth=${argsObj.tremolodepth}` : '';
-      const envStr = argsObj.attack !== undefined ? ` attack=${argsObj.attack?.toFixed?.(3)} release=${argsObj.release?.toFixed?.(3)}` : '';
+      // Show our strudel ADSR params (strudelEnv*) instead of old attack/decay/release
+      const strudelEnvStr = argsObj.strudelEnvAttack !== undefined ? 
+        ` env(A=${argsObj.strudelEnvAttack?.toFixed?.(3)} D=${argsObj.strudelEnvDecay?.toFixed?.(3)} S=${argsObj.strudelEnvSustainLevel?.toFixed?.(2)} R=${argsObj.strudelEnvRelease?.toFixed?.(3)} H=${argsObj.strudelEnvHold?.toFixed?.(3)})` : '';
       const sfEnvStr = argsObj.sfSustain !== undefined ? ` sfAttack=${argsObj.sfAttack?.toFixed?.(3)} sfRelease=${argsObj.sfRelease?.toFixed?.(3)} sfSustain=${argsObj.sfSustain?.toFixed?.(3)}` : '';
       const instrStr = argsObj.instrument ? ` instrument=${argsObj.instrument}` : '';
       const orbitStr = argsObj.orbit !== undefined ? ` orbit=${argsObj.orbit}` : ' orbit=MISSING';
@@ -578,7 +622,7 @@ export function sendHapToSuperDirt(hap: any, targetTime: number, cps: number): v
       const zgainStr = argsObj.zgain !== undefined ? ` zgain=${argsObj.zgain?.toFixed?.(2)}` : '';
       const sustainLevelStr = argsObj.sustainLevel !== undefined ? ` sustainLevel=${argsObj.sustainLevel?.toFixed?.(2)}` : '';
       const ampStr = argsObj.amp !== undefined ? ` amp=${argsObj.amp?.toFixed?.(2)}` : '';
-      console.log(`[osc] SEND: s=${argsObj.s} n=${argsObj.n}${orbitStr} speed=${speedStr}${freqStr}${sustainStr}${sustainLevelStr}${noteStr}${cutoffStr}${shapeStr}${zshapeStr}${zgainStr}${tremStr}${envStr}${sfEnvStr}${instrStr} gain=${argsObj.gain?.toFixed?.(2)}${ampStr} t+${secondsFromNow.toFixed(3)}s`);
+      console.log(`[osc] SEND: s=${argsObj.s} n=${argsObj.n}${orbitStr} speed=${speedStr}${freqStr}${sustainStr}${sustainLevelStr}${noteStr}${cutoffStr}${shapeStr}${zshapeStr}${zgainStr}${tremStr}${strudelEnvStr}${sfEnvStr}${instrStr} gain=${argsObj.gain?.toFixed?.(2)}${ampStr} t+${secondsFromNow.toFixed(3)}s`);
     }
     
     // Send as OSC bundle with timetag for precise scheduling

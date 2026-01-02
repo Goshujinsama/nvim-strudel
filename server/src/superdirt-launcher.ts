@@ -197,172 +197,237 @@ s.waitForBoot {
     // These match superdough's basic waveform synths for OSC-only operation
     // ========================================
     
-    // Sine wave oscillator
-    // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
-    // dirt_gate applies amp * gain^4, we only apply envelope here
-    // Filters only applied when explicitly set (cutoff < 20000 or hcutoff > 20)
-    SynthDef(\\strudel_sine, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
-                               attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                               cutoff = 20000, hcutoff = 20|
-      var sound, env, holdTime;
-      holdTime = max(0.001, sustain - attack - release);
-      env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
-      sound = SinOsc.ar(freq * speed);
+    // Sine wave oscillator (pure tone)
+    // Uses strudelEnv* params for ADSR envelope to avoid SuperDirt's dirt_envelope
+    // superdough defaults: attack=0.001, decay=0.05, sustain=0.6 (level), release=0.01
+    // 'sustain' param here is the note duration (set by osc-output.ts)
+    SynthDef(\strudel_sine, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
+                               cutoff = 20000, hcutoff = 20,
+                               strudelEnvAttack = 0.001, strudelEnvDecay = 0.001,
+                               strudelEnvSustainLevel = 1, strudelEnvRelease = 0.01,
+                               strudelEnvHold = 1|
+      var sound, env;
+      // ADSR envelope with linear curves to match superdough
+      env = EnvGen.ar(
+        Env.new(
+          [0, 1, strudelEnvSustainLevel, strudelEnvSustainLevel, 0],
+          [strudelEnvAttack, strudelEnvDecay, strudelEnvHold, strudelEnvRelease],
+          \lin
+        ),
+        doneAction: 2
+      );
+      sound = SinOsc.ar(freq * speed) * env;
       // Conditional filtering: only apply when user sets explicit values
       sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
       sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
-      sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
+    }, [\ir, \ir, \ir, \kr, \ir, \kr, \kr, \ir, \ir, \ir, \ir, \ir]).add;
     "Added: strudel_sine".postln;
     
     // Sawtooth wave oscillator
-    // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
-    // dirt_gate applies amp * gain^4, we only apply envelope here
+    // Uses strudelEnv* params for ADSR envelope to avoid SuperDirt's dirt_envelope
     // RMS compensation: SC's Saw.ar has lower RMS than Web Audio's normalized sawtooth
     // due to band-limiting. Factor of 2.0 matches RMS levels between the two backends.
-    // Filters only applied when explicitly set (cutoff < 20000 or hcutoff > 20)
-    SynthDef(\\strudel_sawtooth, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
-                                   attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                                   cutoff = 20000, hcutoff = 20|
-      var sound, env, holdTime;
-      holdTime = max(0.001, sustain - attack - release);
-      env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
-      sound = Saw.ar(freq * speed) * 2.0;  // RMS compensation for band-limited Saw
+    SynthDef(\strudel_sawtooth, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
+                                   cutoff = 20000, hcutoff = 20,
+                                   strudelEnvAttack = 0.001, strudelEnvDecay = 0.001,
+                                   strudelEnvSustainLevel = 1, strudelEnvRelease = 0.01,
+                                   strudelEnvHold = 1|
+      var sound, env;
+      env = EnvGen.ar(
+        Env.new(
+          [0, 1, strudelEnvSustainLevel, strudelEnvSustainLevel, 0],
+          [strudelEnvAttack, strudelEnvDecay, strudelEnvHold, strudelEnvRelease],
+          \lin
+        ),
+        doneAction: 2
+      );
+      sound = Saw.ar(freq * speed) * 2.0 * env;  // RMS compensation for band-limited Saw
       sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
       sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
-      sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
+    }, [\ir, \ir, \ir, \kr, \ir, \kr, \kr, \ir, \ir, \ir, \ir, \ir]).add;
     "Added: strudel_sawtooth".postln;
     
     // Alias for sawtooth (superdough uses 'saw')
-    // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
-    // dirt_gate applies amp * gain^4, we only apply envelope here
-    // RMS compensation: SC's Saw.ar has lower RMS than Web Audio's normalized sawtooth
-    // Filters only applied when explicitly set
-    SynthDef(\\strudel_saw, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
-                              attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                              cutoff = 20000, hcutoff = 20|
-      var sound, env, holdTime;
-      holdTime = max(0.001, sustain - attack - release);
-      env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
-      sound = Saw.ar(freq * speed) * 2.0;  // RMS compensation for band-limited Saw
+    // Uses strudelEnv* params for ADSR envelope to avoid SuperDirt's dirt_envelope
+    SynthDef(\strudel_saw, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
+                              cutoff = 20000, hcutoff = 20,
+                              strudelEnvAttack = 0.001, strudelEnvDecay = 0.001,
+                              strudelEnvSustainLevel = 1, strudelEnvRelease = 0.01,
+                              strudelEnvHold = 1|
+      var sound, env;
+      env = EnvGen.ar(
+        Env.new(
+          [0, 1, strudelEnvSustainLevel, strudelEnvSustainLevel, 0],
+          [strudelEnvAttack, strudelEnvDecay, strudelEnvHold, strudelEnvRelease],
+          \lin
+        ),
+        doneAction: 2
+      );
+      sound = Saw.ar(freq * speed) * 2.0 * env;  // RMS compensation for band-limited Saw
       sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
       sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
-      sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
+    }, [\ir, \ir, \ir, \kr, \ir, \kr, \kr, \ir, \ir, \ir, \ir, \ir]).add;
     "Added: strudel_saw".postln;
     
     // Square wave oscillator
-    // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
-    // dirt_gate applies amp * gain^4, we only apply envelope here
+    // Uses strudelEnv* params for ADSR envelope to avoid SuperDirt's dirt_envelope
     // RMS compensation: SC's Pulse.ar has lower RMS than Web Audio's normalized square
-    // Filters only applied when explicitly set
-    SynthDef(\\strudel_square, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
-                                 attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                                 cutoff = 20000, hcutoff = 20|
-      var sound, env, holdTime;
-      holdTime = max(0.001, sustain - attack - release);
-      env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
-      sound = Pulse.ar(freq * speed, 0.5) * 1.9;  // RMS compensation for band-limited Pulse
+    SynthDef(\strudel_square, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
+                                 cutoff = 20000, hcutoff = 20,
+                                 strudelEnvAttack = 0.001, strudelEnvDecay = 0.001,
+                                 strudelEnvSustainLevel = 1, strudelEnvRelease = 0.01,
+                                 strudelEnvHold = 1|
+      var sound, env;
+      env = EnvGen.ar(
+        Env.new(
+          [0, 1, strudelEnvSustainLevel, strudelEnvSustainLevel, 0],
+          [strudelEnvAttack, strudelEnvDecay, strudelEnvHold, strudelEnvRelease],
+          \lin
+        ),
+        doneAction: 2
+      );
+      sound = Pulse.ar(freq * speed, 0.5) * 1.9 * env;  // RMS compensation for band-limited Pulse
       sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
       sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
-      sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
+    }, [\ir, \ir, \ir, \kr, \ir, \kr, \kr, \ir, \ir, \ir, \ir, \ir]).add;
     "Added: strudel_square".postln;
     
     // Triangle wave oscillator
-    // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
-    // dirt_gate applies amp * gain^4, we only apply envelope here
-    // Filters only applied when explicitly set
-    SynthDef(\\strudel_triangle, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
-                                   attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                                   cutoff = 20000, hcutoff = 20|
-      var sound, env, holdTime;
-      holdTime = max(0.001, sustain - attack - release);
-      env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
-      sound = LFTri.ar(freq * speed);
+    // Uses strudelEnv* params for ADSR envelope to avoid SuperDirt's dirt_envelope
+    SynthDef(\strudel_triangle, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
+                                   cutoff = 20000, hcutoff = 20,
+                                   strudelEnvAttack = 0.001, strudelEnvDecay = 0.001,
+                                   strudelEnvSustainLevel = 1, strudelEnvRelease = 0.01,
+                                   strudelEnvHold = 1|
+      var sound, env;
+      env = EnvGen.ar(
+        Env.new(
+          [0, 1, strudelEnvSustainLevel, strudelEnvSustainLevel, 0],
+          [strudelEnvAttack, strudelEnvDecay, strudelEnvHold, strudelEnvRelease],
+          \lin
+        ),
+        doneAction: 2
+      );
+      sound = LFTri.ar(freq * speed) * env;
       sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
       sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
-      sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
+    }, [\ir, \ir, \ir, \kr, \ir, \kr, \kr, \ir, \ir, \ir, \ir, \ir]).add;
     "Added: strudel_triangle".postln;
     
     // Alias for triangle (superdough uses 'tri')
-    // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
-    // dirt_gate applies amp * gain^4, we only apply envelope here
-    // Filters only applied when explicitly set
-    SynthDef(\\strudel_tri, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
-                              attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                              cutoff = 20000, hcutoff = 20|
-      var sound, env, holdTime;
-      holdTime = max(0.001, sustain - attack - release);
-      env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
-      sound = LFTri.ar(freq * speed);
+    // Uses strudelEnv* params for ADSR envelope to avoid SuperDirt's dirt_envelope
+    SynthDef(\strudel_tri, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
+                              cutoff = 20000, hcutoff = 20,
+                              strudelEnvAttack = 0.001, strudelEnvDecay = 0.001,
+                              strudelEnvSustainLevel = 1, strudelEnvRelease = 0.01,
+                              strudelEnvHold = 1|
+      var sound, env;
+      env = EnvGen.ar(
+        Env.new(
+          [0, 1, strudelEnvSustainLevel, strudelEnvSustainLevel, 0],
+          [strudelEnvAttack, strudelEnvDecay, strudelEnvHold, strudelEnvRelease],
+          \lin
+        ),
+        doneAction: 2
+      );
+      sound = LFTri.ar(freq * speed) * env;
       sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
       sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
-      sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
+    }, [\ir, \ir, \ir, \kr, \ir, \kr, \kr, \ir, \ir, \ir, \ir, \ir]).add;
     "Added: strudel_tri".postln;
     
     // White noise generator
-    // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
-    // dirt_gate applies amp * gain^4, we only apply envelope here
-    // Filters only applied when explicitly set
-    SynthDef(\\strudel_white, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
-                                attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                                cutoff = 20000, hcutoff = 20|
-      var sound, env, holdTime;
-      holdTime = max(0.001, sustain - attack - release);
-      env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
-      sound = WhiteNoise.ar;
+    // Uses strudelEnv* params for ADSR envelope to avoid SuperDirt's dirt_envelope
+    SynthDef(\strudel_white, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
+                                cutoff = 20000, hcutoff = 20,
+                                strudelEnvAttack = 0.001, strudelEnvDecay = 0.001,
+                                strudelEnvSustainLevel = 1, strudelEnvRelease = 0.01,
+                                strudelEnvHold = 1|
+      var sound, env;
+      env = EnvGen.ar(
+        Env.new(
+          [0, 1, strudelEnvSustainLevel, strudelEnvSustainLevel, 0],
+          [strudelEnvAttack, strudelEnvDecay, strudelEnvHold, strudelEnvRelease],
+          \lin
+        ),
+        doneAction: 2
+      );
+      sound = WhiteNoise.ar * env;
       sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
       sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
-      sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
+    }, [\ir, \ir, \ir, \kr, \ir, \kr, \kr, \ir, \ir, \ir, \ir, \ir]).add;
     "Added: strudel_white".postln;
     
-    // Pink noise generator
-    // Peak compensation: SC's PinkNoise.ar has peak ~0.40 (not 1.0)
-    // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
-    // dirt_gate applies amp * gain^4, we only apply envelope here
-    // Filters only applied when explicitly set
-    SynthDef(\\strudel_pink, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
-                               attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                               cutoff = 20000, hcutoff = 20|
-      var sound, env, holdTime;
-      holdTime = max(0.001, sustain - attack - release);
-      env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
-      sound = PinkNoise.ar * 2.5;  // Peak compensation for PinkNoise
+    // Pink noise generator - Paul Kellet algorithm to match superdough
+    // Uses strudelEnv* params for ADSR envelope to avoid SuperDirt's dirt_envelope
+    // Superdough uses 6 IIR filters + delayed sample, summed and scaled by 0.11
+    // Each filter: y[n] = feedback * y[n-1] + input_gain * x[n]
+    // Use FOS.ar(in, a0, a1, b1) = a0*x[n] + a1*x[n-1] + b1*y[n-1]
+    SynthDef(\strudel_pink, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
+                               cutoff = 20000, hcutoff = 20,
+                               strudelEnvAttack = 0.001, strudelEnvDecay = 0.001,
+                               strudelEnvSustainLevel = 1, strudelEnvRelease = 0.01,
+                               strudelEnvHold = 1|
+      var sound, white, env;
+      var b0, b1, b2, b3, b4, b5, b6;
+      env = EnvGen.ar(
+        Env.new(
+          [0, 1, strudelEnvSustainLevel, strudelEnvSustainLevel, 0],
+          [strudelEnvAttack, strudelEnvDecay, strudelEnvHold, strudelEnvRelease],
+          \lin
+        ),
+        doneAction: 2
+      );
+      // Paul Kellet pink noise filter (matches superdough exactly)
+      // FOS.ar(in, a0, a1, b1): y[n] = a0*x[n] + a1*x[n-1] + b1*y[n-1]
+      white = WhiteNoise.ar;
+      b0 = FOS.ar(white, 0.0555179, 0, 0.99886);
+      b1 = FOS.ar(white, 0.0750759, 0, 0.99332);
+      b2 = FOS.ar(white, 0.153852, 0, 0.969);
+      b3 = FOS.ar(white, 0.3104856, 0, 0.8665);
+      b4 = FOS.ar(white, 0.5329522, 0, 0.55);
+      b5 = FOS.ar(white, -0.016898, 0, -0.7616);
+      b6 = Delay1.ar(white * 0.115926);  // b6 = previous white sample
+      sound = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + (white * 0.5362)) * 0.11 * env;
       sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
       sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
-      sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
+    }, [\ir, \ir, \ir, \kr, \ir, \kr, \kr, \ir, \ir, \ir, \ir, \ir]).add;
     "Added: strudel_pink".postln;
     
-    // Brown noise generator
-    // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
-    // dirt_gate applies amp * gain^4, we only apply envelope here
-    // Filters only applied when explicitly set
-    SynthDef(\\strudel_brown, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
-                                attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                                cutoff = 20000, hcutoff = 20|
-      var sound, env, holdTime;
-      holdTime = max(0.001, sustain - attack - release);
-      env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
-      sound = BrownNoise.ar;
+    // Brown noise generator - matches superdough algorithm exactly
+    // Uses strudelEnv* params for ADSR envelope to avoid SuperDirt's dirt_envelope
+    // Superdough: c[m] = (a + 0.02 * b) / 1.02, a = c[m]
+    // This is: y[n] = (1/1.02) * y[n-1] + (0.02/1.02) * x[n]
+    //        = 0.9804 * y[n-1] + 0.0196 * x[n]
+    // Use FOS.ar(in, a0, a1, b1): y[n] = a0*x[n] + a1*x[n-1] + b1*y[n-1]
+    SynthDef(\strudel_brown, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
+                                cutoff = 20000, hcutoff = 20,
+                                strudelEnvAttack = 0.001, strudelEnvDecay = 0.001,
+                                strudelEnvSustainLevel = 1, strudelEnvRelease = 0.01,
+                                strudelEnvHold = 1|
+      var sound, env;
+      env = EnvGen.ar(
+        Env.new(
+          [0, 1, strudelEnvSustainLevel, strudelEnvSustainLevel, 0],
+          [strudelEnvAttack, strudelEnvDecay, strudelEnvHold, strudelEnvRelease],
+          \lin
+        ),
+        doneAction: 2
+      );
+      // Superdough brown noise: y[n] = 0.9804 * y[n-1] + 0.0196 * x[n]
+      sound = FOS.ar(WhiteNoise.ar, 0.0196, 0, 0.9804) * env;
       sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
       sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
-      sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
+    }, [\ir, \ir, \ir, \kr, \ir, \kr, \kr, \ir, \ir, \ir, \ir, \ir]).add;
     "Added: strudel_brown".postln;
     
     s.sync;  // Ensure oscillator SynthDefs are registered with server
@@ -489,6 +554,50 @@ s.waitForBoot {
     "*** Strudel ZZFX SynthDef loaded ***".postln;
     
     // ========================================
+    // Strudel ADSR Envelope Module (for SAMPLES only)
+    // Synths have built-in envelopes, but samples use SuperDirt's sample SynthDefs
+    // This module applies ADSR envelope to samples when strudelEnv* params are present
+    // Uses custom parameter names to avoid triggering SuperDirt's dirt_envelope
+    // ========================================
+    
+    SynthDef("strudel_adsr" ++ ${channels}, { |out, strudelEnvAttack = 0.001, strudelEnvDecay = 0.001, 
+                                               strudelEnvSustainLevel = 1, strudelEnvRelease = 0.01,
+                                               strudelEnvHold = 1|
+      var signal, env;
+      signal = In.ar(out, ${channels});
+      // ADSR envelope with linear curves to match superdough
+      // Levels: 0 -> 1 (attack) -> sustainLevel (decay) -> sustainLevel (hold) -> 0 (release)
+      env = EnvGen.ar(
+        Env.new(
+          [0, 1, strudelEnvSustainLevel, strudelEnvSustainLevel, 0],
+          [strudelEnvAttack, strudelEnvDecay, strudelEnvHold, strudelEnvRelease],
+          \\lin
+        )
+      );
+      ReplaceOut.ar(out, signal * env);
+    }, [\\ir, \\ir, \\ir, \\ir, \\ir, \\ir]).add;
+    "Added: strudel_adsr${channels}".postln;
+    
+    // Register the strudel_adsr module with SuperDirt (for samples)
+    // This module triggers when strudelEnvAttack parameter is present
+    // and applies our ADSR envelope INSTEAD of SuperDirt's dirt_envelope
+    ~dirt.addModule('strudel_adsr',
+      { |dirtEvent|
+        dirtEvent.sendSynth('strudel_adsr' ++ ${channels},
+          [
+            strudelEnvAttack: ~strudelEnvAttack,
+            strudelEnvDecay: ~strudelEnvDecay,
+            strudelEnvSustainLevel: ~strudelEnvSustainLevel,
+            strudelEnvRelease: ~strudelEnvRelease,
+            strudelEnvHold: ~strudelEnvHold,
+            out: ~out
+          ])
+      }, { ~strudelEnvAttack.notNil });
+    "*** Strudel ADSR module registered (for samples) ***".postln;
+    
+    s.sync;
+    
+    // ========================================
     // OSC Handlers
     // ========================================
     
@@ -509,6 +618,30 @@ s.waitForBoot {
             "Strudel: Sent load confirmation to port %".format(replyPort).postln;
         });
     }, '/strudel/loadSamples');
+    
+    // OSC handler for Strudel synths - bypasses SuperDirt entirely
+    // This avoids double envelope application from dirt_envelope
+    // Message format: /strudel/synth synthName, param1, value1, param2, value2, ...
+    OSCdef(\\strudelSynth, { |msg|
+        var synthName, args, synth, time, latency;
+        synthName = msg[1].asSymbol;
+        
+        // Parse args as key-value pairs starting from msg[2]
+        args = [];
+        (2, msg.size - 1, 2).do { |i|
+            if(msg[i].notNil && msg[i+1].notNil, {
+                args = args ++ [msg[i].asSymbol, msg[i+1]];
+            });
+        };
+        
+        // Schedule synth with small latency for timing accuracy
+        latency = 0.05;
+        SystemClock.sched(latency, {
+            Synth(synthName, args);
+            nil;
+        });
+    }, '/strudel/synth');
+    "*** Strudel synth OSC handler registered: /strudel/synth ***".postln;
     
     "*** SuperDirt listening on port ${port} ***".postln;
     "*** Strudel OSC handler registered: /strudel/loadSamples ***".postln;

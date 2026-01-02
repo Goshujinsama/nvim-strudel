@@ -327,17 +327,18 @@ if (!result.success) {
   process.exit(1);
 }
 
+// Start playback first, THEN signal SC to start recording
+// This ensures audio is flowing when recording begins
+console.log(`Playing for ${duration} seconds...`);
+const playStartTime = Date.now();
+engine.play();
+
+// Small delay for first OSC messages to be in flight
+await new Promise(r => setTimeout(r, 50));
+
 // Create start flag file to signal SC to begin recording
 writeFileSync(startFlagPath, 'start');
 console.log('Signaled SC to start recording...');
-
-// Small delay to ensure recording has started
-await new Promise(r => setTimeout(r, 300));
-
-// Now play
-const playStartTime = Date.now();
-console.log(`Playing for ${duration} seconds...`);
-engine.play();
 
 // Wait for playback duration exactly
 await new Promise(r => setTimeout(r, duration * 1000));
