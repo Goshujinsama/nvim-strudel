@@ -45,7 +45,7 @@ var numChannels = ~dirt.numChannels;
                       begin * frames, end * frames, begin * frames);
     
     sound = BufRd.ar(sampleNumChannels, bufnum, phase, loop: 1, interpolation: 4);
-    sound = sound * env * amp * pow(gain, 4);
+    sound = sound * env;  // dirt_gate applies amp * gain^4
     
     Out.ar(out, DirtPan.ar(sound, numChannels, pan));
   }, [\ir, \ir, \ir, \ir, \ir, \kr, \ir, \ir, \ir, \ir, \kr, \kr]).add;
@@ -79,7 +79,7 @@ var numChannels = ~dirt.numChannels;
                       begin * frames, end * frames, begin * frames);
     
     sound = BufRd.ar(sampleNumChannels, bufnum, phase, loop: 1, interpolation: 4);
-    sound = sound * env * amp * pow(gain, 4);
+    sound = sound * env;  // dirt_gate applies amp * gain^4
     
     Out.ar(out, DirtPan.ar(sound, numChannels, pan));
   }, [\ir, \ir, \ir, \ir, \ir, \kr, \ir, \ir, \ir, \ir, \ir, \ir, \kr, \kr]).add;
@@ -112,8 +112,8 @@ SynthDef(\strudel_sine, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
   sound = LPF.ar(sound, lpf.clip(20, 20000));
   sound = HPF.ar(sound, hpf.clip(20, 20000));
   
-  // Apply envelope and gain
-  sound = sound * env * amp * pow(gain, 4);
+  // Apply envelope only - dirt_gate applies amp * pow(gain, 4) later
+  sound = sound * env;
   
   Out.ar(out, DirtPan.ar(sound, numChannels, pan));
 }, [\ir, \ir, \ir, \kr, \ir, \ir, \ir, \ir, \ir, \kr, \kr, \kr, \kr, \kr, \kr]).add;
@@ -138,7 +138,7 @@ SynthDef(\strudel_sawtooth, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
   sound = LPF.ar(sound, lpf.clip(20, 20000));
   sound = HPF.ar(sound, hpf.clip(20, 20000));
   
-  sound = sound * env * amp * pow(gain, 4);
+  sound = sound * env;  // dirt_gate applies amp * gain^4
   
   Out.ar(out, DirtPan.ar(sound, numChannels, pan));
 }, [\ir, \ir, \ir, \kr, \ir, \ir, \ir, \ir, \ir, \kr, \kr, \kr, \kr, \kr, \kr]).add;
@@ -159,7 +159,7 @@ SynthDef(\strudel_saw, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
   sound = Saw.ar(freq * speed);
   sound = LPF.ar(sound, lpf.clip(20, 20000));
   sound = HPF.ar(sound, hpf.clip(20, 20000));
-  sound = sound * env * amp * pow(gain, 4);
+  sound = sound * env;  // dirt_gate applies amp * gain^4
   
   Out.ar(out, DirtPan.ar(sound, numChannels, pan));
 }, [\ir, \ir, \ir, \kr, \ir, \ir, \ir, \ir, \ir, \kr, \kr, \kr, \kr, \kr, \kr]).add;
@@ -182,7 +182,7 @@ SynthDef(\strudel_square, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
   
   sound = LPF.ar(sound, lpf.clip(20, 20000));
   sound = HPF.ar(sound, hpf.clip(20, 20000));
-  sound = sound * env * amp * pow(gain, 4);
+  sound = sound * env;  // dirt_gate applies amp * gain^4
   
   Out.ar(out, DirtPan.ar(sound, numChannels, pan));
 }, [\ir, \ir, \ir, \kr, \ir, \ir, \ir, \ir, \ir, \kr, \kr, \kr, \kr, \kr, \kr]).add;
@@ -205,7 +205,7 @@ SynthDef(\strudel_triangle, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
   
   sound = LPF.ar(sound, lpf.clip(20, 20000));
   sound = HPF.ar(sound, hpf.clip(20, 20000));
-  sound = sound * env * amp * pow(gain, 4);
+  sound = sound * env;  // dirt_gate applies amp * gain^4
   
   Out.ar(out, DirtPan.ar(sound, numChannels, pan));
 }, [\ir, \ir, \ir, \kr, \ir, \ir, \ir, \ir, \ir, \kr, \kr, \kr, \kr, \kr, \kr]).add;
@@ -226,7 +226,7 @@ SynthDef(\strudel_tri, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
   sound = LFTri.ar(freq * speed);
   sound = LPF.ar(sound, lpf.clip(20, 20000));
   sound = HPF.ar(sound, hpf.clip(20, 20000));
-  sound = sound * env * amp * pow(gain, 4);
+  sound = sound * env;  // dirt_gate applies amp * gain^4
   
   Out.ar(out, DirtPan.ar(sound, numChannels, pan));
 }, [\ir, \ir, \ir, \kr, \ir, \ir, \ir, \ir, \ir, \kr, \kr, \kr, \kr, \kr, \kr]).add;
@@ -250,7 +250,7 @@ SynthDef(\strudel_white, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
   sound = WhiteNoise.ar;
   sound = LPF.ar(sound, lpf.clip(20, 20000));
   sound = HPF.ar(sound, hpf.clip(20, 20000));
-  sound = sound * env * amp * pow(gain, 4);
+  sound = sound * env;  // dirt_gate applies amp * gain^4
   
   Out.ar(out, DirtPan.ar(sound, numChannels, pan));
 }, [\ir, \ir, \ir, \kr, \ir, \ir, \ir, \ir, \ir, \kr, \kr, \kr, \kr]).add;
@@ -270,7 +270,7 @@ SynthDef(\strudel_pink, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
   sound = PinkNoise.ar;
   sound = LPF.ar(sound, lpf.clip(20, 20000));
   sound = HPF.ar(sound, hpf.clip(20, 20000));
-  sound = sound * env * amp * pow(gain, 4);
+  sound = sound * env;  // dirt_gate applies amp * gain^4
   
   Out.ar(out, DirtPan.ar(sound, numChannels, pan));
 }, [\ir, \ir, \ir, \kr, \ir, \ir, \ir, \ir, \ir, \kr, \kr, \kr, \kr]).add;
@@ -290,7 +290,7 @@ SynthDef(\strudel_brown, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
   sound = BrownNoise.ar;
   sound = LPF.ar(sound, lpf.clip(20, 20000));
   sound = HPF.ar(sound, hpf.clip(20, 20000));
-  sound = sound * env * amp * pow(gain, 4);
+  sound = sound * env;  // dirt_gate applies amp * gain^4
   
   Out.ar(out, DirtPan.ar(sound, numChannels, pan));
 }, [\ir, \ir, \ir, \kr, \ir, \ir, \ir, \ir, \ir, \kr, \kr, \kr, \kr]).add;
