@@ -437,15 +437,19 @@ s.waitForBoot {
     // ZZFX Chip Sound Synth
     // Exact port of ZzFX algorithm from zzfx_fork.mjs
     // https://github.com/KilledByAPixel/ZzFX
+    // Uses strudelEnv* params for ADSR envelope (like other synths)
+    // to avoid double-envelope from SuperDirt's dirt_gate
     // ========================================
     
-    SynthDef(\\strudel_zzfx, { |out, freq = 220, sustain = 1, pan = 0,
-                               attack = 0, decay = 0, sustainLevel = 0.8, release = 0.1,
-                               gain = 1, amp = 0.25, cutoff = 20000, hcutoff = 20, zgain = 0.8,
+    SynthDef(\\strudel_zzfx, { |out, freq = 220, sustain = 1, pan = 0, speed = 1,
+                               cutoff = 20000, hcutoff = 20,
+                               strudelEnvAttack = 0.001, strudelEnvDecay = 0.001,
+                               strudelEnvSustainLevel = 1, strudelEnvRelease = 0.01,
+                               strudelEnvHold = 1,
                                zshape = 0, zshapeCurve = 1, zslide = 0, zdeltaSlide = 0,
                                zrand = 0, znoise = 0, zmod = 0,
                                zpitchJump = 0, zpitchJumpTime = 0|
-      var sound, env, holdTime, envShape;
+      var sound, env;
       var pi2, sampleRate;
       var freqRadians, slide, deltaSlide, modulation, noise;
       var phase, freqAccum, slideAccum, modPhase, f;
@@ -520,34 +524,28 @@ s.waitForBoot {
       // Apply shape curve (ZZFX line 75): sign(s) * abs(s)^shapeCurve
       sound = sound.sign * (sound.abs ** zshapeCurve.max(0.01));
       
-      // ZZFX envelope (lines 78-87):
-      // attack -> decay (to sustainLevel) -> sustain (at sustainLevel) -> release
-      // Note: ZZFX adds 9 samples minimum attack to prevent pop
-      // 
-      // In ZZFX/superdough: sustainTime = duration - attack - decay (zzfx.mjs:32)
-      // Total length = attack + decay + sustainTime + release = duration + release
-      // So release extends PAST the note duration, giving a natural fade.
-      // We match this by calculating holdTime as: sustain - attack - decay (not subtracting release)
-      holdTime = max(0.001, sustain - attack - decay);
-      envShape = Env(
-        [0, 1, sustainLevel, sustainLevel, 0],
-        [attack.max(9/sampleRate), decay.max(0.0001), holdTime, release.max(0.0001)],
-        \\lin  // ZZFX uses linear envelope segments
+      // Use strudelEnv* params for ADSR envelope (matching other synths)
+      // This avoids double-envelope from SuperDirt's dirt_gate
+      env = EnvGen.ar(
+        Env.new(
+          [0, 1, strudelEnvSustainLevel, strudelEnvSustainLevel, 0],
+          [strudelEnvAttack, strudelEnvDecay, strudelEnvHold, strudelEnvRelease],
+          \\lin  // ZZFX uses linear envelope segments
+        ),
+        doneAction: 2
       );
-      env = EnvGen.ar(envShape, doneAction: 2);
       
-      // Apply volume and envelope
-      // ZZFX uses 0.25 base volume (from zzfx.mjs), zgain is linear pattern gain
-      // dirt_gate handles amp * gain^4, but we set gain=1 for ZZFX to bypass the curve
-      sound = sound * env * 0.25 * zgain;
+      // Apply ZZFX base volume (0.25) and envelope
+      // Pattern gain is handled via SuperDirt's gain (after convertGainForSuperDirt)
+      sound = sound * env * 0.25;
       
       // Apply filters (only when explicitly set)
       sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
       sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
       
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
-    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr, \\kr,
-        \\ir, \\ir, \\ir, \\ir, \\ir, \\ir, \\ir, \\ir, \\ir, \\ir]).add;
+    }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\kr, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir,
+        \\ir, \\ir, \\ir, \\ir, \\ir, \\ir, \\ir, \\ir, \\ir]).add;
     "Added: strudel_zzfx".postln;
     
     s.sync;  // Ensure ZZFX SynthDef is registered with server

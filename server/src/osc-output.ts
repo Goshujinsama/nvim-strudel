@@ -303,8 +303,7 @@ function hapToOscArgs(hap: any, cps: number): any[] {
   // Strudel uses: phaserrate, phaserdepth
   // SuperDirt uses the same names, so no translation needed
   
-  // Track if we should skip gain conversion (for synths that handle their own gain)
-  let skipGainConversion = false;
+
   
   // Handle synth sounds (oscillators)
   // These use our custom strudel_* SynthDefs instead of sample playback
@@ -375,14 +374,6 @@ function hapToOscArgs(hap: any, cps: number): any[] {
     
     // Handle ZZFX-specific parameters
     if (synthInstrument === 'strudel_zzfx') {
-      // For ZZFX, Strudel's 'sustain' param is the envelope sustain LEVEL (0-1)
-      // We need to pass it as 'sustainLevel' to the SynthDef
-      // The note duration (delta) goes to 'sustain' (the time parameter)
-      if (controls.sustain !== undefined) {
-        controls.sustainLevel = controls.sustain;
-      }
-      controls.sustain = delta;  // Note duration for envelope timing
-      
       // Set zshape based on sound name (0=sin, 1=tri, 2=saw, 3=tan, 4=noise)
       if (controls.zshape === undefined && soundName) {
         controls.zshape = zzfxShapeMap[soundName] ?? 0;
@@ -391,13 +382,6 @@ function hapToOscArgs(hap: any, cps: number): any[] {
       if (soundName === 'z_square' && controls.zshapeCurve === undefined) {
         controls.zshapeCurve = 0;
       }
-      
-      // ZZFX uses linear gain (volume * sustainLevel), not SuperDirt's gain^4 curve
-      // Pass the raw pattern gain as zgain for linear application in SynthDef
-      // We set SuperDirt's gain to 1 so its gain module doesn't affect volume
-      controls.zgain = controls.gain ?? 0.8;
-      controls.gain = 1.0;  // Neutral gain for SuperDirt (1^4 = 1)
-      skipGainConversion = true;  // Don't apply convertGainForSuperDirt
       
       // Map Strudel ZZFX params to our SynthDef params
       // These match the param names from superdough/zzfx.mjs
@@ -417,14 +401,21 @@ function hapToOscArgs(hap: any, cps: number): any[] {
         controls.zpitchJumpTime = controls.pitchJumpTime;
       }
       // znoise, zmod, zrand are passed through as-is (already prefixed with z)
+      
+      // ZZFX has 0.25 volume baked into the SynthDef, so DON'T apply the 0.3 multiplier
+      // that regular synths use. Just use the raw pattern gain.
+      // (The 0.25 is roughly equivalent to the 0.3 in other synths)
+      controls.gain = controls.gain ?? 0.8;
     } else {
       // For non-ZZFX synths (sine, saw, etc.)
-      
       // Apply superdough's oscillator gain reduction (0.3) here instead of in SynthDef
       // This matches synth.mjs: const g = gainNode(0.3);
       // The gain will then go through convertGainForSuperDirt() for the gain^4 curve
       controls.gain = (controls.gain ?? 0.8) * 0.3;
-      
+    }
+    
+    // Common envelope handling for ALL synths (including ZZFX)
+    {
       // Calculate ADSR values matching superdough's getADSRValues behavior
       // This ensures sustainLevel is set correctly based on which params are specified
       // IMPORTANT: Check rawValue.sustain BEFORE we overwrite controls.sustain with delta
@@ -532,11 +523,8 @@ function hapToOscArgs(hap: any, cps: number): any[] {
     }
   }
   
-  // Now convert gain to SuperDirt's gain curve (applies to most sounds)
-  // Skip for ZZFX which handles its own linear gain via zgain
-  if (!skipGainConversion) {
-    controls.gain = convertGainForSuperDirt(controls.gain);
-  }
+  // Convert gain to SuperDirt's gain curve (applies to all synth sounds)
+  controls.gain = convertGainForSuperDirt(controls.gain);
 
   // Flatten to array of [key, value, key, value, ...]
   const args: any[] = [];
