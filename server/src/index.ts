@@ -195,6 +195,19 @@ async function main() {
   const server = new StrudelTcpServer(config);
   const engine = new StrudelEngine();
 
+  // Track OSC initialization - playback waits for this if OSC mode is enabled
+  // Using an object wrapper to avoid TypeScript narrowing issues with closures
+  const oscInit: { promise: Promise<void> | null; resolve: (() => void) | null } = {
+    promise: null,
+    resolve: null,
+  };
+  
+  if (useOsc) {
+    oscInit.promise = new Promise<void>((resolve) => {
+      oscInit.resolve = resolve;
+    });
+  }
+
   // Auto-start SuperDirt in the background if requested and OSC mode is enabled
   // This is non-blocking so the TCP server starts immediately
   let superDirtLauncher: SuperDirtLauncher | null = null;
@@ -223,14 +236,26 @@ async function main() {
         } else {
           console.log('[strudel-server] SuperDirt is ready for sample playback!');
         }
+        // Signal that SuperDirt initialization is complete - playback can now proceed
+        if (oscInit.resolve) {
+          oscInit.resolve();
+        }
       }).catch((err) => {
         superDirtStarting = false;
         console.error('[strudel-server] SuperDirt startup error:', err);
         superDirtLauncher = null;
+        // Still resolve so playback doesn't hang forever (will use Web Audio fallback)
+        if (oscInit.resolve) {
+          oscInit.resolve();
+        }
       });
     } else {
       console.log('[strudel-server] sclang not found - SuperDirt auto-start disabled');
       console.log('[strudel-server] Install SuperCollider to use SuperDirt: https://supercollider.github.io/');
+      // sclang not available, resolve immediately so playback doesn't hang
+      if (oscInit.resolve) {
+        oscInit.resolve();
+      }
     }
   }
 
@@ -304,6 +329,13 @@ async function main() {
     } else {
       console.log('[strudel-server] OSC output failed');
     }
+    
+    // If we're NOT auto-starting SuperDirt, resolve immediately
+    // (user is running SuperDirt externally, so it should already be ready)
+    // If we ARE auto-starting, the resolve happens in the SuperDirt .then() callback above
+    if (!autoSuperDirt && oscInit.resolve) {
+      oscInit.resolve();
+    }
   }
 
   // Forward active elements to all clients
@@ -329,6 +361,12 @@ async function main() {
 
     switch (msg.type) {
       case 'eval': {
+        // Wait for OSC initialization to complete before evaluating
+        // Eval often auto-starts playback, so we need audio output ready
+        if (oscInit.promise) {
+          await oscInit.promise;
+        }
+        
         serverLog('debug', `Eval code (${msg.code?.length || 0} chars): ${msg.code?.substring(0, 200)}...`);
         const result = await engine.eval(msg.code);
         serverLog('debug', `Eval result: success=${result.success}, error=${result.error || 'none'}`);
@@ -350,6 +388,12 @@ async function main() {
       }
 
       case 'play': {
+        // Wait for OSC initialization to complete before starting playback
+        // This ensures audio output is ready when the pattern starts
+        if (oscInit.promise) {
+          await oscInit.promise;
+        }
+        
         const started = engine.play();
         if (!started) {
           server.send(ws, {
