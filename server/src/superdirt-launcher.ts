@@ -200,15 +200,17 @@ s.waitForBoot {
     // Sine wave oscillator
     // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
     // dirt_gate applies amp * gain^4, we only apply envelope here
+    // Filters only applied when explicitly set (cutoff < 20000 or hcutoff > 20)
     SynthDef(\\strudel_sine, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                               lpf = 20000, hpf = 0|
+                               cutoff = 20000, hcutoff = 20|
       var sound, env, holdTime;
       holdTime = max(0.001, sustain - attack - release);
       env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
       sound = SinOsc.ar(freq * speed);
-      sound = LPF.ar(sound, lpf.clip(20, 20000));
-      sound = HPF.ar(sound, hpf.clip(20, 20000));
+      // Conditional filtering: only apply when user sets explicit values
+      sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
+      sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
       sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
@@ -217,15 +219,18 @@ s.waitForBoot {
     // Sawtooth wave oscillator
     // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
     // dirt_gate applies amp * gain^4, we only apply envelope here
+    // RMS compensation: SC's Saw.ar has lower RMS than Web Audio's normalized sawtooth
+    // due to band-limiting. Factor of 2.0 matches RMS levels between the two backends.
+    // Filters only applied when explicitly set (cutoff < 20000 or hcutoff > 20)
     SynthDef(\\strudel_sawtooth, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                    attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                                   lpf = 20000, hpf = 0|
+                                   cutoff = 20000, hcutoff = 20|
       var sound, env, holdTime;
       holdTime = max(0.001, sustain - attack - release);
       env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
-      sound = Saw.ar(freq * speed);
-      sound = LPF.ar(sound, lpf.clip(20, 20000));
-      sound = HPF.ar(sound, hpf.clip(20, 20000));
+      sound = Saw.ar(freq * speed) * 2.0;  // RMS compensation for band-limited Saw
+      sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
+      sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
       sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
@@ -234,15 +239,17 @@ s.waitForBoot {
     // Alias for sawtooth (superdough uses 'saw')
     // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
     // dirt_gate applies amp * gain^4, we only apply envelope here
+    // RMS compensation: SC's Saw.ar has lower RMS than Web Audio's normalized sawtooth
+    // Filters only applied when explicitly set
     SynthDef(\\strudel_saw, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                               attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                              lpf = 20000, hpf = 0|
+                              cutoff = 20000, hcutoff = 20|
       var sound, env, holdTime;
       holdTime = max(0.001, sustain - attack - release);
       env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
-      sound = Saw.ar(freq * speed);
-      sound = LPF.ar(sound, lpf.clip(20, 20000));
-      sound = HPF.ar(sound, hpf.clip(20, 20000));
+      sound = Saw.ar(freq * speed) * 2.0;  // RMS compensation for band-limited Saw
+      sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
+      sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
       sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
@@ -251,15 +258,17 @@ s.waitForBoot {
     // Square wave oscillator
     // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
     // dirt_gate applies amp * gain^4, we only apply envelope here
+    // RMS compensation: SC's Pulse.ar has lower RMS than Web Audio's normalized square
+    // Filters only applied when explicitly set
     SynthDef(\\strudel_square, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                  attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                                 lpf = 20000, hpf = 0|
+                                 cutoff = 20000, hcutoff = 20|
       var sound, env, holdTime;
       holdTime = max(0.001, sustain - attack - release);
       env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
-      sound = Pulse.ar(freq * speed, 0.5);
-      sound = LPF.ar(sound, lpf.clip(20, 20000));
-      sound = HPF.ar(sound, hpf.clip(20, 20000));
+      sound = Pulse.ar(freq * speed, 0.5) * 1.9;  // RMS compensation for band-limited Pulse
+      sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
+      sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
       sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
@@ -268,15 +277,16 @@ s.waitForBoot {
     // Triangle wave oscillator
     // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
     // dirt_gate applies amp * gain^4, we only apply envelope here
+    // Filters only applied when explicitly set
     SynthDef(\\strudel_triangle, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                    attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                                   lpf = 20000, hpf = 0|
+                                   cutoff = 20000, hcutoff = 20|
       var sound, env, holdTime;
       holdTime = max(0.001, sustain - attack - release);
       env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
       sound = LFTri.ar(freq * speed);
-      sound = LPF.ar(sound, lpf.clip(20, 20000));
-      sound = HPF.ar(sound, hpf.clip(20, 20000));
+      sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
+      sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
       sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
@@ -285,15 +295,16 @@ s.waitForBoot {
     // Alias for triangle (superdough uses 'tri')
     // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
     // dirt_gate applies amp * gain^4, we only apply envelope here
+    // Filters only applied when explicitly set
     SynthDef(\\strudel_tri, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                               attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                              lpf = 20000, hpf = 0|
+                              cutoff = 20000, hcutoff = 20|
       var sound, env, holdTime;
       holdTime = max(0.001, sustain - attack - release);
       env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
       sound = LFTri.ar(freq * speed);
-      sound = LPF.ar(sound, lpf.clip(20, 20000));
-      sound = HPF.ar(sound, hpf.clip(20, 20000));
+      sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
+      sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
       sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
@@ -302,32 +313,35 @@ s.waitForBoot {
     // White noise generator
     // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
     // dirt_gate applies amp * gain^4, we only apply envelope here
+    // Filters only applied when explicitly set
     SynthDef(\\strudel_white, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                 attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                                lpf = 20000, hpf = 0|
+                                cutoff = 20000, hcutoff = 20|
       var sound, env, holdTime;
       holdTime = max(0.001, sustain - attack - release);
       env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
       sound = WhiteNoise.ar;
-      sound = LPF.ar(sound, lpf.clip(20, 20000));
-      sound = HPF.ar(sound, hpf.clip(20, 20000));
+      sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
+      sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
       sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
     "Added: strudel_white".postln;
     
     // Pink noise generator
+    // Peak compensation: SC's PinkNoise.ar has peak ~0.40 (not 1.0)
     // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
     // dirt_gate applies amp * gain^4, we only apply envelope here
+    // Filters only applied when explicitly set
     SynthDef(\\strudel_pink, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                               lpf = 20000, hpf = 0|
+                               cutoff = 20000, hcutoff = 20|
       var sound, env, holdTime;
       holdTime = max(0.001, sustain - attack - release);
       env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
-      sound = PinkNoise.ar;
-      sound = LPF.ar(sound, lpf.clip(20, 20000));
-      sound = HPF.ar(sound, hpf.clip(20, 20000));
+      sound = PinkNoise.ar * 2.5;  // Peak compensation for PinkNoise
+      sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
+      sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
       sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
@@ -336,15 +350,16 @@ s.waitForBoot {
     // Brown noise generator
     // Gain is applied in osc-output.ts (0.3 reduction + gain^4 conversion)
     // dirt_gate applies amp * gain^4, we only apply envelope here
+    // Filters only applied when explicitly set
     SynthDef(\\strudel_brown, { |out, freq = 440, sustain = 1, pan = 0, speed = 1,
                                 attack = 0.001, decay = 0.05, sustainLevel = 0.8, release = 0.1,
-                                lpf = 20000, hpf = 0|
+                                cutoff = 20000, hcutoff = 20|
       var sound, env, holdTime;
       holdTime = max(0.001, sustain - attack - release);
       env = EnvGen.ar(Env.linen(attack, holdTime, release, 1, \\sin), doneAction: 2);
       sound = BrownNoise.ar;
-      sound = LPF.ar(sound, lpf.clip(20, 20000));
-      sound = HPF.ar(sound, hpf.clip(20, 20000));
+      sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
+      sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
       sound = sound * env;
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr]).add;
@@ -361,7 +376,7 @@ s.waitForBoot {
     
     SynthDef(\\strudel_zzfx, { |out, freq = 220, sustain = 1, pan = 0,
                                attack = 0, decay = 0, sustainLevel = 0.8, release = 0.1,
-                               gain = 1, amp = 0.25, lpf = 20000, hpf = 0, zgain = 0.8,
+                               gain = 1, amp = 0.25, cutoff = 20000, hcutoff = 20, zgain = 0.8,
                                zshape = 0, zshapeCurve = 1, zslide = 0, zdeltaSlide = 0,
                                zrand = 0, znoise = 0, zmod = 0,
                                zpitchJump = 0, zpitchJumpTime = 0|
@@ -461,9 +476,9 @@ s.waitForBoot {
       // dirt_gate handles amp * gain^4, but we set gain=1 for ZZFX to bypass the curve
       sound = sound * env * 0.25 * zgain;
       
-      // Apply filters
-      sound = LPF.ar(sound, lpf.clip(20, 20000));
-      sound = HPF.ar(sound, hpf.clip(20, 20000));
+      // Apply filters (only when explicitly set)
+      sound = Select.ar(cutoff < 20000, [sound, LPF.ar(sound, cutoff.clip(20, 20000))]);
+      sound = Select.ar(hcutoff > 20, [sound, HPF.ar(sound, hcutoff.clip(20, 20000))]);
       
       Out.ar(out, DirtPan.ar(sound, ${channels}, pan));
     }, [\\ir, \\ir, \\ir, \\kr, \\ir, \\ir, \\ir, \\ir, \\kr, \\kr, \\kr, \\kr,
