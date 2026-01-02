@@ -388,6 +388,42 @@ export function extractBankUsage(code: string): Array<{ bank: string; sounds: st
 }
 
 /**
+ * Extract samples() calls from pattern code
+ * Looks for patterns like:
+ *   samples('github:tidalcycles/dirt-samples')
+ *   await samples('https://example.com/samples.json', 'https://example.com/audio/')
+ *   samples({ kick: ['kick.wav'] }, 'https://example.com/')
+ * 
+ * Returns array of { source, baseUrl? } objects that can be passed to samples()
+ */
+export function extractSamplesCalls(code: string): Array<{ source: string; baseUrl?: string }> {
+  const results: Array<{ source: string; baseUrl?: string }> = [];
+  
+  // Match samples(...) calls - capture the arguments
+  // This regex matches:
+  //   samples('url')
+  //   samples('url', 'baseUrl')
+  //   samples("url")
+  //   await samples(...)
+  // It captures string arguments (not object literals, those are inline and don't need pre-loading)
+  const samplesPattern = /\bsamples\s*\(\s*["'`]([^"'`]+)["'`](?:\s*,\s*["'`]([^"'`]+)["'`])?\s*\)/g;
+  
+  let match;
+  while ((match = samplesPattern.exec(code)) !== null) {
+    const source = match[1];
+    const baseUrl = match[2];
+    
+    // Only include URL/github sources that need fetching
+    // Object literals are defined inline and don't need pre-loading
+    if (source.startsWith('github:') || source.startsWith('http') || source.includes('.json')) {
+      results.push({ source, baseUrl });
+    }
+  }
+  
+  return results;
+}
+
+/**
  * Check if a sound name is a GM soundfont
  */
 export function isGmSoundfont(name: string): boolean {
@@ -547,12 +583,40 @@ async function loadSound(name: string): Promise<boolean> {
 
 /**
  * Analyze code and load any missing sounds before evaluation
- * Returns the names of sounds that were loaded
+ * This pre-loads samples for SuperDirt so they're ready when playback starts.
+ * Returns the names of sounds that were loaded.
+ * 
+ * The flow is:
+ * 1. Extract samples() calls and load those sample packs (for SuperDirt)
+ * 2. Extract s(), sound(), bank() usage to know what sounds will be used
+ * 3. Download any missing sounds to cache
+ * 4. Notify SuperDirt to load from cache
+ * 5. Wait for SuperDirt confirmation (with timeout)
  */
 export async function loadSoundsForCode(code: string): Promise<string[]> {
   const loaded: string[] = [];
   
-  // Extract direct sound names (s("bd"), sound("piano"), etc.)
+  // Step 1: Extract and load samples() calls first
+  // This downloads sample packs that the pattern defines
+  const samplesCalls = extractSamplesCalls(code);
+  if (samplesCalls.length > 0) {
+    console.log(`[on-demand] Found ${samplesCalls.length} samples() calls to pre-load`);
+    for (const { source, baseUrl } of samplesCalls) {
+      console.log(`[on-demand] Pre-loading samples: ${source}`);
+      try {
+        // Download samples to cache for SuperDirt
+        const result = await loadSamples(source, baseUrl);
+        if (result.bankNames.length > 0) {
+          loaded.push(...result.bankNames);
+          console.log(`[on-demand] Pre-loaded: ${result.bankNames.join(', ')}`);
+        }
+      } catch (err) {
+        console.warn(`[on-demand] Failed to pre-load ${source}:`, err);
+      }
+    }
+  }
+  
+  // Step 2: Extract direct sound names (s("bd"), sound("piano"), etc.)
   const soundNames = extractSoundNames(code);
   
   // Extract bank() usage (bank("tr909").s("bd"))
@@ -576,7 +640,7 @@ export async function loadSoundsForCode(code: string): Promise<string[]> {
     }
   }
 
-  // Load direct sound names (GM soundfonts, known CDN banks, Dirt-Samples, and VCSL)
+  // Step 3: Load direct sound names (GM soundfonts, known CDN banks, Dirt-Samples, and VCSL)
   const directNeedsLoading = Array.from(soundNames).filter(name => {
     // Skip if already cached
     if (isSoundCached(name)) return false;
@@ -628,11 +692,14 @@ export async function loadSoundsForCode(code: string): Promise<string[]> {
     console.log('[on-demand] All sounds already cached or not loadable');
   }
   
-  // Always notify SuperDirt to load samples when we detected sounds that need it
-  // This ensures cached soundfonts are loaded even if they weren't newly downloaded
+  // Step 4 & 5: Notify SuperDirt to load samples
+  // Note: We use fire-and-forget (timeout=0) because the confirmation mechanism
+  // requires a reply port that may not be set up. SuperDirt will load the samples
+  // asynchronously, and they should be ready by the time the first cycle plays.
   const soundfontsDetected = Array.from(soundNames).filter(name => isGmSoundfont(name));
-  if (soundfontsDetected.length > 0 || loaded.length > 0) {
-    notifySuperDirtLoadSamples(getCacheDir(), 0);
+  if (soundfontsDetected.length > 0 || loaded.length > 0 || samplesCalls.length > 0) {
+    console.log('[on-demand] Notifying SuperDirt to load samples...');
+    notifySuperDirtLoadSamples(getCacheDir(), 0); // fire and forget
   }
   
   return loaded;
