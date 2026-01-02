@@ -233,6 +233,13 @@ function hapToOscArgs(hap: any, cps: number): any[] {
   if (controls.orbit === undefined) {
     controls.orbit = 0;
   }
+  
+  // Set amp to 1 to match superdough's gain behavior
+  // SuperDirt's default amp is 0.4 (for headroom), but superdough applies gain linearly
+  // without this reduction. Setting amp=1 ensures our gain conversion produces matching levels.
+  if (controls.amp === undefined) {
+    controls.amp = 1;
+  }
 
   // Handle bank prefix - maps Strudel bank aliases to full SuperDirt bank names
   // e.g., bank="tr909" + s="bd" -> s="RolandTR909_bd"
@@ -565,7 +572,8 @@ export function sendHapToSuperDirt(hap: any, targetTime: number, cps: number): v
       const zshapeStr = argsObj.zshape !== undefined ? ` zshape=${argsObj.zshape}` : '';
       const zgainStr = argsObj.zgain !== undefined ? ` zgain=${argsObj.zgain?.toFixed?.(2)}` : '';
       const sustainLevelStr = argsObj.sustainLevel !== undefined ? ` sustainLevel=${argsObj.sustainLevel?.toFixed?.(2)}` : '';
-      console.log(`[osc] SEND: s=${argsObj.s} n=${argsObj.n}${orbitStr} speed=${speedStr}${freqStr}${sustainStr}${sustainLevelStr}${noteStr}${cutoffStr}${shapeStr}${zshapeStr}${zgainStr}${tremStr}${envStr}${sfEnvStr}${instrStr} gain=${argsObj.gain?.toFixed?.(2)} t+${secondsFromNow.toFixed(3)}s`);
+      const ampStr = argsObj.amp !== undefined ? ` amp=${argsObj.amp?.toFixed?.(2)}` : '';
+      console.log(`[osc] SEND: s=${argsObj.s} n=${argsObj.n}${orbitStr} speed=${speedStr}${freqStr}${sustainStr}${sustainLevelStr}${noteStr}${cutoffStr}${shapeStr}${zshapeStr}${zgainStr}${tremStr}${envStr}${sfEnvStr}${instrStr} gain=${argsObj.gain?.toFixed?.(2)}${ampStr} t+${secondsFromNow.toFixed(3)}s`);
     }
     
     // Send as OSC bundle with timetag for precise scheduling
