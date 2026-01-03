@@ -15,7 +15,55 @@ const frac = (x) => x - Math.floor(x);
 const _PI = Math.PI;
 const blockSize = 128;
 
-// Waveshapes for LFO
+// Parameter value helper (for a-rate params)
+const pv = (arr, n) => arr[n] ?? arr[0];
+const getParamValue = (i, param) => param[i] ?? param[0];
+
+// Unison detune calculation for supersaw
+const getUnisonDetune = (unison, detune, voiceIndex) => {
+  if (unison < 2) {
+    return 0;
+  }
+  return lerp(-detune * 0.5, detune * 0.5, voiceIndex / (unison - 1));
+};
+
+// Apply semitone detuning to frequency
+const applySemitoneDetuneToFrequency = (frequency, detune) => {
+  return frequency * Math.pow(2, detune / 12);
+};
+
+// Phase wrapping for oscillators
+function wrapPhase(phase, maxPhase = 1) {
+  if (phase >= maxPhase) {
+    phase -= maxPhase;
+  } else if (phase < 0) {
+    phase += maxPhase;
+  }
+  return phase;
+}
+
+// PolyBLEP anti-aliasing for band-limited waveforms
+// Smooth waveshape near discontinuities to remove frequencies above Nyquist
+// Referenced from https://www.kvraudio.com/forum/viewtopic.php?t=375517
+function polyBlep(phase, dt) {
+  dt = Math.min(dt, 1 - dt);
+  // Start of cycle
+  if (phase < dt) {
+    phase /= dt;
+    return phase + phase - phase * phase - 1;
+  }
+  // End of cycle
+  else if (phase > 1 - dt) {
+    phase = (phase - 1) / dt;
+    return phase * phase + phase + phase + 1;
+  }
+  // 0 otherwise
+  else {
+    return 0;
+  }
+}
+
+// Waveshapes for LFO and oscillators
 const waveshapes = {
   tri(phase, skew = 0.5) {
     const x = 1 - skew;
@@ -38,6 +86,11 @@ const waveshapes = {
       return 0;
     }
     return 1;
+  },
+  // Band-limited sawtooth using polyBLEP anti-aliasing
+  sawblep(phase, dt) {
+    const v = 2 * phase - 1;
+    return v - polyBlep(phase, dt);
   },
 };
 const waveShapeNames = Object.keys(waveshapes);
@@ -490,6 +543,195 @@ class LFOProcessor extends AudioWorkletProcessor {
 }
 
 // ============================================================================
+// SuperSaw Oscillator Processor - Multiple detuned sawtooth oscillators
+// Adapted from superdough's worklets.mjs
+// ============================================================================
+class SuperSawOscillatorProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.phase = [];
+  }
+
+  static get parameterDescriptors() {
+    return [
+      { name: 'begin', defaultValue: 0 },
+      { name: 'end', defaultValue: 0 },
+      { name: 'frequency', defaultValue: 440 },
+      { name: 'panspread', defaultValue: 0.4 },
+      { name: 'freqspread', defaultValue: 0.2 },
+      { name: 'detune', defaultValue: 0 },
+      { name: 'voices', defaultValue: 5 },
+    ];
+  }
+
+  process(_input, outputs, params) {
+    // Safely access params with defaults
+    const beginParam = params.begin;
+    const endParam = params.end;
+    
+    if (!beginParam || !endParam) return true;
+    
+    if (currentTime <= beginParam[0]) {
+      return true;
+    }
+    if (currentTime >= endParam[0]) {
+      return false;
+    }
+
+    const output = outputs[0];
+    if (!output || !output[0]) return true;
+
+    // Get param arrays with fallback
+    const freqParam = params.frequency;
+    const detuneParam = params.detune;
+    const voicesParam = params.voices;
+    const freqspreadParam = params.freqspread;
+    const panspreadParam = params.panspread;
+
+    for (let i = 0; i < output[0].length; i++) {
+      const detune = detuneParam ? (detuneParam[i] ?? detuneParam[0] ?? 0) : 0;
+      const voices = Math.floor(voicesParam ? (voicesParam[i] ?? voicesParam[0] ?? 5) : 5);
+      const freqspread = freqspreadParam ? (freqspreadParam[i] ?? freqspreadParam[0] ?? 0.2) : 0.2;
+      const panspreadRaw = panspreadParam ? (panspreadParam[i] ?? panspreadParam[0] ?? 0.4) : 0.4;
+      const panspread = panspreadRaw * 0.5 + 0.5;
+      const gain1 = Math.sqrt(1 - panspread);
+      const gain2 = Math.sqrt(panspread);
+      let freq = freqParam ? (freqParam[i] ?? freqParam[0] ?? 440) : 440;
+      
+      // Main detuning
+      freq = applySemitoneDetuneToFrequency(freq, detune / 100);
+      
+      for (let n = 0; n < voices; n++) {
+        const isOdd = (n & 1) === 1;
+        let gainL = gain1;
+        let gainR = gain2;
+        
+        // Invert right and left gain for odd voices
+        if (isOdd) {
+          gainL = gain2;
+          gainR = gain1;
+        }
+        
+        // Individual voice detuning
+        const freqVoice = applySemitoneDetuneToFrequency(freq, getUnisonDetune(voices, freqspread, n));
+        
+        // We must wrap this here because it is passed into sawblep below which has domain [0, 1]
+        const dt = mod(freqVoice / sampleRate, 1);
+        this.phase[n] = this.phase[n] ?? Math.random();
+        const v = waveshapes.sawblep(this.phase[n], dt);
+
+        output[0][i] = (output[0][i] || 0) + v * gainL;
+        if (output[1]) {
+          output[1][i] = (output[1][i] || 0) + v * gainR;
+        }
+
+        this.phase[n] = wrapPhase(this.phase[n] + dt);
+      }
+    }
+    return true;
+  }
+}
+
+// ============================================================================
+// Pulse Oscillator Processor - Band-limited pulse wave with variable width
+// Adapted from superdough's worklets.mjs
+// Uses Tomisawa oscillator technique for band-limited pulse generation
+// https://www.musicdsp.org/en/latest/Effects/221-band-limited-pwm-generator.html
+// ============================================================================
+class PulseOscillatorProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.pi = _PI;
+    this.phi = -this.pi; // phase
+    this.Y0 = 0; // feedback memories
+    this.Y1 = 0;
+    this.PW = this.pi; // pulse width
+    this.B = 2.3; // feedback coefficient
+    this.dphif = 0; // filtered phase increment
+    this.envf = 0; // filtered envelope
+  }
+
+  static get parameterDescriptors() {
+    return [
+      { name: 'begin', defaultValue: 0 },
+      { name: 'end', defaultValue: 0 },
+      { name: 'frequency', defaultValue: 440 },
+      { name: 'detune', defaultValue: 0 },
+      { name: 'pulsewidth', defaultValue: 0.5 },
+    ];
+  }
+
+  process(inputs, outputs, params) {
+    if (this.disconnected) {
+      return false;
+    }
+    
+    // Safely access params with defaults
+    const beginParam = params.begin;
+    const endParam = params.end;
+    const freqParam = params.frequency;
+    const detuneParam = params.detune;
+    const pwParam = params.pulsewidth;
+    
+    if (!beginParam || !endParam) return true;
+    
+    if (currentTime <= beginParam[0]) {
+      return true;
+    }
+    if (currentTime >= endParam[0]) {
+      return false;
+    }
+    
+    const output = outputs[0];
+    if (!output || !output[0]) return true;
+    
+    let env = 1;
+    let dphi;
+
+    for (let i = 0; i < output[0].length; i++) {
+      const pwVal = pwParam ? (pwParam[i] ?? pwParam[0] ?? 0.5) : 0.5;
+      const pw = (1 - clamp(pwVal, -0.99, 0.99)) * this.pi;
+      const detuneVal = detuneParam ? (detuneParam[i] ?? detuneParam[0] ?? 0) : 0;
+      const freqVal = freqParam ? (freqParam[i] ?? freqParam[0] ?? 440) : 440;
+      const freq = applySemitoneDetuneToFrequency(freqVal, detuneVal / 100);
+
+      dphi = freq * (this.pi / (sampleRate * 0.5)); // phase increment
+      this.dphif += 0.1 * (dphi - this.dphif);
+
+      env *= 0.9998; // exponential decay envelope
+      this.envf += 0.1 * (env - this.envf);
+
+      // Feedback coefficient control
+      this.B = 2.3 * (1 - 0.0001 * freq); // feedback limitation
+      if (this.B < 0) this.B = 0;
+
+      // Waveform generation (half-Tomisawa oscillators)
+      this.phi += this.dphif; // phase increment
+      if (this.phi >= this.pi) this.phi -= 2 * this.pi; // phase wrapping
+
+      // First half-Tomisawa generator
+      let out0 = Math.cos(this.phi + this.B * this.Y0); // self-phase modulation
+      this.Y0 = 0.5 * (out0 + this.Y0); // anti-hunting filter
+
+      // Second half-Tomisawa generator (with phase offset for pulse width)
+      let out1 = Math.cos(this.phi + this.B * this.Y1 + pw);
+      this.Y1 = 0.5 * (out1 + this.Y1); // anti-hunting filter
+
+      // Combination of both oscillators with envelope applied
+      const sample = 0.15 * (out0 - out1) * this.envf;
+      
+      for (let o = 0; o < output.length; o++) {
+        if (output[o]) {
+          output[o][i] = sample;
+        }
+      }
+    }
+
+    return true;
+  }
+}
+
+// ============================================================================
 // Register all processors
 // ============================================================================
 registerProcessor('shape-processor', ShapeProcessor);
@@ -499,6 +741,8 @@ registerProcessor('djf-processor', DJFProcessor);
 registerProcessor('ladder-processor', LadderProcessor);
 registerProcessor('distort-processor', DistortProcessor);
 registerProcessor('lfo-processor', LFOProcessor);
+registerProcessor('supersaw-oscillator', SuperSawOscillatorProcessor);
+registerProcessor('pulse-oscillator', PulseOscillatorProcessor);
 
 // Log registration
-console.log('[worklets-node] Registered processors: shape, coarse, crush, djf, ladder, distort, lfo');
+console.log('[worklets-node] Registered processors: shape, coarse, crush, djf, ladder, distort, lfo, supersaw-oscillator, pulse-oscillator');
