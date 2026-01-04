@@ -48,6 +48,10 @@ sudo apt install supercollider sc3-plugins
 brew install supercollider
 ```
 
+**Nixos:**
+Requires Special Setup [View](nvim-strudel-nixos-setup.md)
+
+
 #### JACK/Audio Server
 
 On Linux, SuperDirt requires a JACK-compatible audio server. Modern Linux systems typically use **PipeWire**, which provides a JACK-compatible interface automatically:
