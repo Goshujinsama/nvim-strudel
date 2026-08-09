@@ -737,6 +737,13 @@ export function hapToOscArgs(hap: any, cps: number): any[] {
     // Keep the dry soundfont source alive through the downstream envelope's
     // release stage. Previously it freed after delta + 0.1 and cut long tails.
     controls.sfSustain = delta + envRelease + 0.01;
+    // DirtEvent normally clamps an event group's totalDuration to the natural
+    // sample length. Soundfonts loop during sustain, so that would free the
+    // entire group (source + per-event effects + envelope) after only a few
+    // hundred milliseconds and make each following note appear to steal the
+    // previous voice. Override the rate-unit duration so Dirt's gate survives
+    // through this voice's complete sustain and release.
+    controls.unitDuration = controls.sfSustain * Math.max(Math.abs(controls.speed), 0.000001);
     // Envelope curve: 0 = linear (testing), -2 = exponential (default)
     controls.curve = envelopeCurve;
     controls.sustain = delta;

@@ -55,9 +55,10 @@ describe('native OSC control translation', () => {
     }), 1)).toThrow('Unknown tremolo shape');
   });
 
-  it('keeps soundfont sources alive through native envelope release', () => {
+  it('keeps each soundfont event group alive through its independent release', () => {
     const controls = argsToControls(hapToOscArgs(hap({
       s: 'gm_voice_oohs',
+      speed: 0.5,
       attack: 0.7,
       decay: 2.5,
       sustain: 0,
@@ -68,5 +69,8 @@ describe('native OSC control translation', () => {
     expect(controls.sustain).toBe(2);
     expect(controls.release).toBe(2.5);
     expect(controls.sfSustain).toBeCloseTo(4.51);
+    // Dirt divides rate-unit duration by speed. Compensating here prevents its
+    // event gate from reverting to the short natural sample duration.
+    expect(Number(controls.unitDuration) / Number(controls.speed)).toBeCloseTo(4.51);
   });
 });

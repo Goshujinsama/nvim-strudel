@@ -10,7 +10,7 @@ All notable changes to nvim-strudel will be documented in this file.
 
 ### Fixed
 - Native OSC tremolo now maps symbolic shapes to SynthDef indices, phase-locks to Strudel cycle time, and matches superdough depth/curve ordering
-- Native soundfont sources now remain alive through the complete ADSR release stage
+- Native soundfont sources and their per-event StrudelDirt groups now remain alive through the complete ADSR release, allowing dense polyphonic events to overlap without voice stealing
 - Cached soundfonts are no longer reloaded on every evaluation, avoiding active SuperCollider buffer invalidation
 - Dynamic sample-bank loads now wait for StrudelDirt confirmation before native playback starts
 
