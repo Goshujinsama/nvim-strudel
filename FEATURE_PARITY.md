@@ -1,6 +1,6 @@
 # Feature Parity: WebAudio vs SuperDirt/OSC
 
-This document tracks feature parity between the WebAudio backend (superdough) and our SuperDirt/OSC backend.
+This document tracks feature parity between the WebAudio backend (superdough) and our independent native SuperDirt/OSC backend. OSC mode performs all audio processing in SuperCollider and has no per-event WebAudio fallback.
 
 **Last Updated:** 2026-01-06 (Session 8)
 

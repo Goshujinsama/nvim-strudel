@@ -114,23 +114,6 @@ export function isOscConnected(): boolean {
 }
 
 /**
- * Synth sounds that can be routed to OSC (SuperDirt/StrudelDirt)
- * These can be routed to OSC instead of requiring Web Audio
- */
-const oscSynthSounds = new Set([
-  // Basic waveforms - StrudelDirt provides these
-  'sine', 'sin', 'sawtooth', 'saw', 'square', 'sqr', 'triangle', 'tri',
-  // Noise - StrudelDirt provides these
-  'white', 'pink', 'brown',
-  // Extended synths - StrudelDirt provides these
-  'pulse', 'supersaw', 'superpulse', 'sbd', 'sbd2',
-  // ZZFX chip sounds - our custom synth
-  'zzfx', 'z_sine', 'z_sawtooth', 'z_triangle', 'z_square', 'z_tan', 'z_noise',
-  // ByteBeat - our custom synth
-  'bytebeat'
-]);
-
-/**
  * Per-synth gain compensation factors for StrudelDirt synths
  * 
  * StrudelDirt synths have:
@@ -188,17 +171,16 @@ function getStrudelDirtSynthGainCompensation(soundName: string): number {
 }
 
 /**
- * Check if a sound name is a synth that can be played via OSC
- */
-export function isSynthSoundForOsc(soundName: string): boolean {
-  return oscSynthSounds.has(soundName);
-}
-
-/**
  * Get the OSC UDP port for sending additional messages (e.g., sample loading)
  */
 export function getOscPort(): any {
   return udpPort;
+}
+
+/** Stop all active native SuperCollider voices without touching WebAudio. */
+export function sendHushToSuperDirt(): void {
+  if (!udpPort || !isOpen) return;
+  udpPort.send({ address: '/strudel/hush', args: [] });
 }
 
 /**
@@ -265,7 +247,19 @@ function getADSRValues(
  * Convert a hap value to SuperDirt OSC message arguments
  * Based on @strudel/osc's parseControlsFromHap
  */
-function hapToOscArgs(hap: any, cps: number): any[] {
+const tremoloShapeIndices: Record<string, number> = {
+  tri: 0,
+  sine: 1,
+  ramp: 2,
+  saw: 3,
+  square: 4,
+};
+
+function wrapUnitPhase(value: number): number {
+  return ((value % 1) + 1) % 1;
+}
+
+export function hapToOscArgs(hap: any, cps: number): any[] {
   const rawValue = hap.value || {};
   const begin = hap.wholeOrPart?.()?.begin?.valueOf?.() ?? 0;
   const duration = hap.duration?.valueOf?.() ?? 1;
@@ -357,47 +351,54 @@ function hapToOscArgs(hap: any, cps: number): any[] {
     controls.speed = controls.speed / cps;
   }
   
-  // Handle tremolo parameter mapping
-  // Strudel uses: tremolo (Hz) or tremolosync (cycles), tremolodepth, tremoloskew, tremolophase, tremoloshape
-  // We use custom strudel* params to use our strudel_tremolo module instead of SuperDirt's dirt_tremolo
-  // Our module supports: strudelTremRate, strudelTremDepth, strudelTremSkew, strudelTremPhase, strudelTremShape
-  if (controls.tremolosync != null) {
-    // tremolosync is in cycles, convert to Hz using cps
-    controls.strudelTremRate = controls.tremolosync * cps;
+  // Handle tremolo parameter mapping. Strudel accepts symbolic LFO shapes,
+  // while SynthDef controls must be numeric. superdough also phase-locks the
+  // LFO to cycle time; preserve that instead of restarting phase at every hap.
+  const tremoloSync = controls.tremolosync;
+  if (tremoloSync != null) {
+    controls.strudelTremRate = Number(tremoloSync) * cps;
     delete controls.tremolosync;
   } else if (controls.tremolo != null) {
-    // tremolo is already in Hz
-    controls.strudelTremRate = controls.tremolo;
+    controls.strudelTremRate = Number(controls.tremolo);
     delete controls.tremolo;
   }
-  
-  // If tremolo is active but tremolodepth not specified, default to 1 (matching superdough)
+
   if (controls.strudelTremRate != null && controls.tremolodepth == null) {
     controls.strudelTremDepth = 1;
   } else if (controls.tremolodepth != null) {
     controls.strudelTremDepth = controls.tremolodepth;
     delete controls.tremolodepth;
   }
-  
-  // Pass through tremolo shape parameters to our custom module
+
   if (controls.tremoloskew != null) {
     controls.strudelTremSkew = controls.tremoloskew;
     delete controls.tremoloskew;
   } else if (controls.strudelTremRate != null) {
-    // superdough default: skew = tremoloshape != null ? 0.5 : 1
-    // When no shape specified, skew defaults to 1 (pure ramp-down)
-    // When shape is specified, skew defaults to 0.5 (symmetric)
-    controls.strudelTremSkew = (controls.tremoloshape != null) ? 0.5 : 1.0;
+    controls.strudelTremSkew = controls.tremoloshape != null ? 0.5 : 1;
   }
-  if (controls.tremolophase != null) {
-    controls.strudelTremPhase = controls.tremolophase;
-    delete controls.tremolophase;
-  }
+
   if (controls.tremoloshape != null) {
-    // superdough shape: 0=tri, 1=sine, 2=ramp, 3=saw, 4=square
-    controls.strudelTremShape = controls.tremoloshape;
+    const rawShape = controls.tremoloshape;
+    if (typeof rawShape === 'string') {
+      const shape = tremoloShapeIndices[rawShape.toLowerCase()];
+      if (shape === undefined) {
+        throw new Error(`Unknown tremolo shape "${rawShape}"`);
+      }
+      controls.strudelTremShape = shape;
+    } else {
+      controls.strudelTremShape = Math.max(0, Math.min(4, Math.floor(Number(rawShape))));
+    }
     delete controls.tremoloshape;
   }
+
+  if (controls.strudelTremRate != null) {
+    const explicitPhase = Number(controls.tremolophase ?? 0);
+    const cycleTimeSeconds = begin / cps;
+    controls.strudelTremPhase = wrapUnitPhase(
+      cycleTimeSeconds * Number(controls.strudelTremRate) + explicitPhase,
+    );
+  }
+  delete controls.tremolophase;
   
   // Delete any remaining tremolorate that might conflict with SuperDirt's module
   if (controls.tremolorate != null) {
@@ -707,10 +708,6 @@ function hapToOscArgs(hap: any, cps: number): any[] {
     // Soundfont samples are stereo (converted by ffmpeg with -ac 2)
     controls.instrument = 'strudel_soundfont_2_2';
     
-    // sfSustain controls how long the synth plays (for doneAction timing)
-    // This is the note duration, not sustain level
-    if (controls.sfSustain == null) controls.sfSustain = delta;
-    
     // Pass through loop points for sample-accurate sustain looping
     // These come from processValueForOsc via calculateNAndSpeed
     // loopBegin/loopEnd are normalized 0-1 positions within the sample
@@ -737,6 +734,9 @@ function hapToOscArgs(hap: any, cps: number): any[] {
     controls.decay = envDecay;
     controls.hold = envSustainLevel;
     controls.release = envRelease;
+    // Keep the dry soundfont source alive through the downstream envelope's
+    // release stage. Previously it freed after delta + 0.1 and cut long tails.
+    controls.sfSustain = delta + envRelease + 0.01;
     // Envelope curve: 0 = linear (testing), -2 = exponential (default)
     controls.curve = envelopeCurve;
     controls.sustain = delta;
@@ -1104,7 +1104,12 @@ export function sendHapToSuperDirt(hap: any, targetTime: number, cps: number): v
       const noteStr = argsObj.note !== undefined ? ` note=${argsObj.note}` : '';
       const freqStr = argsObj.freq !== undefined ? ` freq=${argsObj.freq?.toFixed?.(1)}` : '';
       const sustainStr = argsObj.sustain !== undefined ? ` sustain=${argsObj.sustain?.toFixed?.(3)}` : '';
-      const tremStr = argsObj.tremolorate !== undefined ? ` tremolorate=${argsObj.tremolorate?.toFixed?.(2)} tremolodepth=${argsObj.tremolodepth}` : '';
+      const tremStr = argsObj.strudelTremRate !== undefined
+        ? ` trem=${argsObj.strudelTremRate?.toFixed?.(2)}` +
+          ` depth=${argsObj.strudelTremDepth}` +
+          ` shape=${argsObj.strudelTremShape}` +
+          ` phase=${argsObj.strudelTremPhase?.toFixed?.(3)}`
+        : '';
       const sfEnvStr = argsObj.sfSustain !== undefined ? ` sfSustain=${argsObj.sfSustain?.toFixed?.(3)}` : '';
       const sfLoopStr = argsObj.sfLoopBegin !== undefined ? ` loop=${argsObj.sfLoopBegin?.toFixed?.(4)}-${argsObj.sfLoopEnd?.toFixed?.(4)}` : '';
       const instrStr = argsObj.instrument ? ` instrument=${argsObj.instrument}` : '';

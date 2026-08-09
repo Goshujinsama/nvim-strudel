@@ -6,7 +6,7 @@ import * as mini from '@strudel/mini';
 import * as tonal from '@strudel/tonal';
 import { transpiler } from '@strudel/transpiler';
 import type { ActiveElement, VisualizationEvent } from './types.js';
-import { initOsc, sendHapToSuperDirt, isOscConnected, closeOsc, setAudioContextStartTime, isSynthSoundForOsc, OscConfig } from './osc-output.js';
+import { initOsc, sendHapToSuperDirt, sendHushToSuperDirt, isOscConnected, closeOsc, setAudioContextStartTime, OscConfig } from './osc-output.js';
 import { writeEngineState, clearEngineState } from './engine-state.js';
 import { loadSamples as loadSamplesForSuperDirt, initSampleManager, notifySuperDirtLoadSamples, setupOscPort } from './sample-manager.js';
 import { loadSoundsForCode, ensureDrumMachineMetadataLoaded, resolveDrumMachineBankSync } from './on-demand-loader.js';
@@ -112,21 +112,28 @@ async function samples(
   if (oscModeEnabled) {
     try {
       console.log('[strudel-engine] Downloading samples for SuperDirt...');
-      const { bankPath, bankNames } = await loadSamplesForSuperDirt(source, baseUrl);
+      const { bankPath, bankNames, changedBankNames } = await loadSamplesForSuperDirt(source, baseUrl);
       if (bankNames.length > 0) {
-        console.log(`[strudel-engine] SuperDirt samples ready: ${bankNames.join(', ')}`);
-        // Notify SuperDirt to reload samples
-        notifySuperDirtLoadSamples(bankPath);
+        console.log(`[strudel-engine] StrudelDirt samples ready: ${bankNames.join(', ')}`);
+      }
+      for (const bank of changedBankNames) {
+        const confirmed = await notifySuperDirtLoadSamples(`${bankPath}/${bank}`, 30_000);
+        if (!confirmed) {
+          throw new Error(`StrudelDirt did not confirm updated bank "${bank}"`);
+        }
       }
     } catch (err) {
-      console.error('[strudel-engine] Failed to load samples for SuperDirt:', err);
-      // Continue anyway - WebAudio samples will still work
+      console.error('[strudel-engine] Failed to load samples for StrudelDirt:', err);
+      throw err;
     }
   }
   
-  // Call the real samples() function for WebAudio
-  await superdoughSamples(source, baseUrl, options);
-  
+  // Register WebAudio buffers only in WebAudio mode. Native OSC mode has
+  // already loaded the corresponding bank into StrudelDirt above.
+  if (!oscModeEnabled) {
+    await superdoughSamples(source, baseUrl, options);
+  }
+
   console.log(`[strudel-engine] Samples loaded, total available: ${loadedSamples.size}`);
 }
 
@@ -473,6 +480,10 @@ console.log(`[strudel-engine] Available: ${loadedSamples.size} samples, ${sample
  * Strudel pattern evaluation engine
  * Uses the actual Strudel REPL for pattern evaluation and scheduling
  */
+export interface StrudelEngineOptions {
+  output?: 'webaudio' | 'osc';
+}
+
 export class StrudelEngine {
   private repl: ReturnType<typeof repl> | null = null;
   private playing = false;  // True when not stopped (true for both play and pause)
@@ -486,27 +497,35 @@ export class StrudelEngine {
   private activeElements: ActiveElement[] = [];
   private broadcastTimer: NodeJS.Timeout | null = null;
   private oscEnabled = false;
-  private webAudioEnabled = true; // Enable by default
+  private webAudioEnabled: boolean;
+  private readonly outputMode: 'webaudio' | 'osc';
   private currentCode = ''; // Store current code for offset->line/col conversion
   private lastEvalError: string | null = null; // Track eval errors
   private serverPort = 0; // Track the server port for state file
 
-  constructor() {
+  constructor(options: StrudelEngineOptions = {}) {
+    this.outputMode = options.output ?? 'webaudio';
+    this.webAudioEnabled = this.outputMode === 'webaudio';
     this.initRepl();
-    
-    // Bind REPL control functions so they work from user code
+
     replControls.hush = () => this.hush();
     replControls.setcps = (cps: number) => this.setCps(cps);
     replControls.requestVisualization = () => this.requestVisualization();
-    
-    console.log('[strudel-engine] Engine initialized');
-    
-    // Log audio context state and load worklets
+
+    console.log(`[strudel-engine] Engine initialized (${this.outputMode})`);
+
+    if (this.outputMode === 'osc') {
+      // OSC scheduling uses Node's monotonic clock. No AudioContext or worklet
+      // graph is created for the native SuperCollider backend.
+      const nativeTime = performance.now() / 1000;
+      setAudioContextStartTime(Date.now() / 1000 - nativeTime);
+      console.log('[strudel-engine] Native OSC clock initialized (WebAudio disabled)');
+      return;
+    }
+
     const ctx = getAudioContext();
     console.log(`[strudel-engine] AudioContext: ${ctx.state}, ${ctx.sampleRate}Hz`);
-    
-    // Resume AudioContext if suspended (required for Node.js since superdough's
-    // initAudio() bails out early when window is undefined)
+
     if (ctx.state === 'suspended') {
       ctx.resume().then(() => {
         console.log('[strudel-engine] AudioContext resumed');
@@ -514,13 +533,10 @@ export class StrudelEngine {
         console.error('[strudel-engine] Failed to resume AudioContext:', err);
       });
     }
-    
-    // Record when the AudioContext was created for OSC timing synchronization
-    // AudioContext.currentTime starts at 0, so the start time is now minus currentTime
+
     const audioContextStartTime = Date.now() / 1000 - ctx.currentTime;
     setAudioContextStartTime(audioContextStartTime);
-    
-    // Load our Node.js-compatible worklets onto the audio context
+
     loadNodeWorklets(ctx).catch(err => {
       console.error('[strudel-engine] Failed to load worklets:', err);
     });
@@ -530,8 +546,11 @@ export class StrudelEngine {
    * Enable/disable Web Audio output (superdough)
    */
   setWebAudioEnabled(enabled: boolean): void {
+    if (this.outputMode === 'osc' && enabled) {
+      throw new Error('Cannot enable WebAudio processing in the native OSC backend');
+    }
     this.webAudioEnabled = enabled;
-    console.log(`[strudel-engine] Web Audio ${enabled ? 'enabled' : 'disabled'}`);
+    console.log(`[strudel-engine] WebAudio ${enabled ? 'enabled' : 'disabled'}`);
   }
 
   /**
@@ -546,6 +565,10 @@ export class StrudelEngine {
    * Call this to send audio to SuperCollider/SuperDirt
    */
   async enableOsc(config: OscConfig = {}): Promise<boolean> {
+    if (this.outputMode !== 'osc') {
+      console.error('[strudel-engine] Cannot enable OSC on a WebAudio engine');
+      return false;
+    }
     try {
       await initOsc(config);
       this.oscEnabled = true;
@@ -596,10 +619,9 @@ export class StrudelEngine {
   }
 
   private initRepl() {
-    // Use AudioContext time for synchronization with superdough
-    const getTime = () => {
-      return getAudioContext().currentTime;
-    };
+    const getTime = () => this.outputMode === 'osc'
+      ? performance.now() / 1000
+      : getAudioContext().currentTime;
 
     // Pre-calculate line offsets for faster offset->line/col conversion
     let lineOffsets: number[] = [];
@@ -635,52 +657,32 @@ export class StrudelEngine {
         // IMPORTANT: Don't await superdough - fire and forget for tight timing
         // The Web Audio API handles scheduling internally via absoluteTime
 
-        // Determine the sound name to check if it's a synth
-        const soundName = hap.value?.s || '';
-        const isSynthSound = synthSounds.has(soundName);
-        
-        // Check if this synth sound can be played via OSC (has SuperDirt SynthDef)
-        const canPlaySynthViaOsc = isSynthSound && isSynthSoundForOsc(soundName);
-
-        // Routing logic:
-        // - Synth sounds with OSC SynthDefs -> OSC when connected, else Web Audio
-        // - Synth sounds without OSC SynthDefs -> Web Audio only
-        // - Sample sounds when OSC connected -> OSC only (avoid double-playing)
-        // - Sample sounds when OSC not connected -> Web Audio
-        const oscConnected = this.oscEnabled && isOscConnected();
-        const useOscForThis = oscConnected && (!isSynthSound || canPlaySynthViaOsc);
-        const useWebAudioForThis = this.webAudioEnabled && !useOscForThis;
-
-        // Play sound via superdough (Web Audio)
-        if (useWebAudioForThis) {
-          // Use the absolute time 't' directly - this is what strudel's webaudio.mjs does
-          // The 't' parameter is the precise target time for this event
-          // See: https://github.com/tidalcycles/strudel/pull/1004
-
-          // Check for unknown bank aliases and strip them to prevent invalid sound names
+        if (this.outputMode === 'osc') {
+          if (!this.oscEnabled || !isOscConnected()) {
+            throw new Error('Native OSC backend is not connected');
+          }
+          if (typeof hap.value?.source === 'function') {
+            throw new Error('Inline WebAudio source functions are unavailable in the native OSC backend');
+          }
+          // OSC mode is a complete native backend. Every event goes through
+          // StrudelDirt/SuperCollider; there is no per-event WebAudio fallback.
+          sendHapToSuperDirt(hap, t, cps);
+        } else {
+          if (!this.webAudioEnabled) return;
           let value = hap.value;
           if (value?.bank && value?.s) {
             const fullBankName = resolveDrumMachineBankSync(String(value.bank));
             if (!fullBankName) {
               console.warn(`[strudel-engine] Unknown bank "${value.bank}" - valid banks include: TR808, TR909, Linn, DMX, etc. Using sound "${value.s}" without bank prefix.`);
-              // Strip the invalid bank to prevent superdough from creating "drum_bd" etc.
               value = { ...value };
               delete value.bank;
             }
           }
 
-          // Fire and forget - don't await, let Web Audio handle the timing
           superdough(value, t, duration, cps, hap.whole?.begin?.valueOf()).catch((err) => {
-            // Only log errors for debugging, and do it asynchronously
             const sound = hap.value?.s || hap.value?.note || '?';
             console.warn(`[strudel-engine] Audio error for "${sound}": ${err instanceof Error ? err.message : err}`);
           });
-        }
-
-        // Send to SuperDirt via OSC for sample sounds
-        // Pass 't' (target time in AudioContext seconds) for proper scheduling
-        if (useOscForThis) {
-          sendHapToSuperDirt(hap, t, cps);
         }
         
         // Defer visualization work to avoid blocking audio scheduling
@@ -872,8 +874,9 @@ export class StrudelEngine {
     if (!this.repl) return;
     this.repl.stop();
     this.cycle = 0;
-    // Cancel scheduled worklet disconnects (cleanup any lingering worklets)
-    cancelScheduledDisconnects();
+    if (this.outputMode === 'webaudio') {
+      cancelScheduledDisconnects();
+    }
   }
 
   /**
@@ -885,16 +888,17 @@ export class StrudelEngine {
     this.repl.stop();
     this.cycle = 0;
     
-    // Cancel scheduled worklet disconnects and disconnect immediately
-    cancelScheduledDisconnects();
-    
-    // Clear any pending audio by suspending and resuming the audio context
-    const ctx = getAudioContext();
-    if (ctx.state === 'running') {
-      ctx.suspend().then(() => {
-        ctx.resume();
-        console.log('[strudel-engine] Audio context reset (hush)');
-      });
+    if (this.outputMode === 'osc') {
+      sendHushToSuperDirt();
+    } else {
+      cancelScheduledDisconnects();
+      const ctx = getAudioContext();
+      if (ctx.state === 'running') {
+        ctx.suspend().then(() => {
+          ctx.resume();
+          console.log('[strudel-engine] Audio context reset (hush)');
+        });
+      }
     }
     
     console.log('[strudel-engine] Hush!');

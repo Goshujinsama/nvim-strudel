@@ -41,6 +41,8 @@ const NATIVE_FORMATS = ['.wav', '.aif', '.aiff', '.aifc'];
 
 let oscPort: any = null;
 let replyPort: any = null; // For receiving confirmation from SuperDirt
+let replyPortInitPromise: Promise<void> | null = null;
+let loadNotificationQueue: Promise<void> = Promise.resolve();
 let pendingLoadCallbacks: Map<string, () => void> = new Map();
 
 /**
@@ -72,39 +74,50 @@ export async function initSampleManager(): Promise<void> {
  * Set up OSC port for receiving confirmation messages from SuperDirt
  */
 async function setupReplyPort(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    replyPort = new osc.UDPPort({
+  if (replyPort) return;
+  if (replyPortInitPromise) return replyPortInitPromise;
+
+  replyPortInitPromise = new Promise<void>((resolve, reject) => {
+    const port = new osc.UDPPort({
       localAddress: '127.0.0.1',
-      localPort: 0, // Let OS assign a port
+      localPort: 0,
     });
 
-    replyPort.on('message', (msg: any) => {
-      if (msg.address === '/strudel/samplesLoaded') {
-        const path = msg.args?.[0];
-        console.log(`[sample-manager] SuperDirt confirmed samples loaded: ${path}`);
-        
-        // Resolve any pending callbacks for this path
-        const callback = pendingLoadCallbacks.get(path);
-        if (callback) {
-          callback();
-          pendingLoadCallbacks.delete(path);
-        }
+    port.on('message', (msg: any) => {
+      if (msg.address !== '/strudel/samplesLoaded') return;
+      const path = msg.args?.[0];
+      console.log(`[sample-manager] StrudelDirt confirmed samples loaded: ${path}`);
+      const callback = pendingLoadCallbacks.get(path);
+      if (callback) {
+        callback();
+        pendingLoadCallbacks.delete(path);
       }
     });
 
-    replyPort.on('ready', () => {
-      const actualPort = replyPort.socket?.address()?.port || 0;
+    port.on('ready', () => {
+      replyPort = port;
+      const actualPort = port.socket?.address()?.port || 0;
+      if (!actualPort) {
+        reject(new Error('Could not determine sample-manager OSC reply port'));
+        return;
+      }
       console.log(`[sample-manager] Reply port listening on ${actualPort}`);
       resolve();
     });
 
-    replyPort.on('error', (err: Error) => {
+    port.on('error', (err: Error) => {
       console.error('[sample-manager] Reply port error:', err);
       reject(err);
     });
 
-    replyPort.open();
+    port.open();
   });
+
+  try {
+    await replyPortInitPromise;
+  } finally {
+    replyPortInitPromise = null;
+  }
 }
 
 /**
@@ -210,7 +223,7 @@ function saveBankMetadata(bankDir: string, expectedFiles: string[]): void {
 export async function loadSamples(
   source: string | Record<string, any>,
   baseUrl?: string
-): Promise<{ bankPath: string; bankNames: string[] }> {
+): Promise<{ bankPath: string; bankNames: string[]; changedBankNames: string[] }> {
   let sampleMap: Record<string, string[]> = {};
   let sampleBaseUrl = baseUrl || '';
 
@@ -244,6 +257,7 @@ export async function loadSamples(
   }
 
   const bankNames: string[] = [];
+  const changedBankNames: string[] = [];
   
   // Process each sample bank
   for (const [bankName, samples] of Object.entries(sampleMap)) {
@@ -324,10 +338,11 @@ export async function loadSamples(
       saveBankMetadata(bankDir, downloadedFiles);
       console.log(`[sample-manager] Bank '${bankName}' ready (${fileIndex} files)`);
       bankNames.push(bankName);
+      changedBankNames.push(bankName);
     }
   }
 
-  return { bankPath: CACHE_DIR, bankNames };
+  return { bankPath: CACHE_DIR, bankNames, changedBankNames };
 }
 
 /**
@@ -336,19 +351,37 @@ export async function loadSamples(
  * @param path The path to load samples from
  * @param timeout Maximum time to wait for confirmation (ms), 0 = fire and forget (default)
  */
-export function notifySuperDirtLoadSamples(path: string = CACHE_DIR, timeout: number = 0): Promise<boolean> {
+async function notifySuperDirtLoadSamplesNow(path: string, timeout: number): Promise<boolean> {
   if (!oscPort) {
-    console.warn('[sample-manager] OSC not connected, cannot notify SuperDirt');
-    return Promise.resolve(false);
+    console.warn('[sample-manager] OSC not connected, cannot notify StrudelDirt');
+    return false;
   }
 
   const fullPath = path + '/*';
 
   try {
-    // Get the reply port number to send to SuperDirt (only when waiting for confirmation)
+    if (timeout > 0) await setupReplyPort();
     const replyPortNum = timeout > 0 ? (replyPort?.socket?.address()?.port || 0) : 0;
+    if (timeout > 0 && !replyPortNum) {
+      throw new Error('Sample-manager OSC reply port is not ready');
+    }
 
-    // Send the load request
+    const confirmation = timeout > 0
+      ? new Promise<boolean>((resolve) => {
+          const timeoutHandle = setTimeout(() => {
+            if (pendingLoadCallbacks.has(fullPath)) {
+              console.warn('[sample-manager] Timeout waiting for StrudelDirt sample confirmation');
+              pendingLoadCallbacks.delete(fullPath);
+              resolve(false);
+            }
+          }, timeout);
+          pendingLoadCallbacks.set(fullPath, () => {
+            clearTimeout(timeoutHandle);
+            resolve(true);
+          });
+        })
+      : null;
+
     oscPort.send({
       address: '/strudel/loadSamples',
       args: [
@@ -356,31 +389,26 @@ export function notifySuperDirtLoadSamples(path: string = CACHE_DIR, timeout: nu
         { type: 'i', value: replyPortNum },
       ],
     });
-    console.log(`[sample-manager] Notified SuperDirt to load samples from: ${path}`);
+    console.log(`[sample-manager] Notified StrudelDirt to load samples from: ${path}`);
 
-    // If no timeout, fire and forget - don't register any callback
-    if (timeout <= 0) {
-      return Promise.resolve(true);
-    }
-
-    // Wait for confirmation with timeout
-    return new Promise<boolean>((resolve) => {
-      // Store the callback for confirmation
-      pendingLoadCallbacks.set(fullPath, () => resolve(true));
-
-      // Always clean up after timeout, whether confirmed or not
-      setTimeout(() => {
-        if (pendingLoadCallbacks.has(fullPath)) {
-          console.warn(`[sample-manager] Timeout waiting for SuperDirt confirmation`);
-          pendingLoadCallbacks.delete(fullPath);
-          resolve(false);
-        }
-      }, timeout);
-    });
+    return confirmation ? await confirmation : true;
   } catch (err) {
-    console.error('[sample-manager] Failed to notify SuperDirt:', err);
-    return Promise.resolve(false);
+    pendingLoadCallbacks.delete(fullPath);
+    console.error('[sample-manager] Failed to notify StrudelDirt:', err);
+    return false;
   }
+}
+
+export function notifySuperDirtLoadSamples(
+  path: string = CACHE_DIR,
+  timeout: number = 0,
+): Promise<boolean> {
+  const result = loadNotificationQueue.then(() => notifySuperDirtLoadSamplesNow(path, timeout));
+  loadNotificationQueue = result.then(
+    () => undefined,
+    () => undefined,
+  );
+  return result;
 }
 
 /**

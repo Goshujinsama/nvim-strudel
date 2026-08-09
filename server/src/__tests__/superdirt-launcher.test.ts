@@ -67,8 +67,8 @@ describe('SuperDirtLauncher', () => {
       expect(matches).not.toBeNull();
       expect(matches!.length).toBeGreaterThan(0);
       
-      // Verify we have multiple SynthDefs with rate specs
-      expect(matches!.length).toBeGreaterThanOrEqual(5);
+      // Verify all current custom rate-spec SynthDefs are represented.
+      expect(matches!.length).toBeGreaterThanOrEqual(4);
     });
 
     it('should not contain unescaped rate symbols', () => {

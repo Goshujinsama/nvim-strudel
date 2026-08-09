@@ -168,7 +168,7 @@ if (fileWriteMode !== 'none') {
 }
 
 console.log('Creating Strudel engine...');
-const engine = new StrudelEngine();
+const engine = new StrudelEngine({ output: useOsc ? 'osc' : 'webaudio' });
 
 // Wait for engine initialization
 await new Promise(r => setTimeout(r, 2000));
@@ -178,7 +178,7 @@ let superDirtLauncher = null;
 
 // Enable OSC mode if requested (for real-time playback) OR if recording OSC
 if (useOsc || oscScorePath) {
-  const { initOsc, setOscDebug, getOscPort } = await import('./dist/osc-output.js');
+  const { setOscDebug, getOscPort } = await import('./dist/osc-output.js');
   
   // Only start SuperDirt if we're doing real-time OSC playback
   if (useOsc) {
@@ -210,15 +210,15 @@ if (useOsc || oscScorePath) {
     console.log('Initializing OSC connection to SuperDirt...');
     const envCurve = process.env.STRUDEL_ENVELOPE_CURVE ? parseFloat(process.env.STRUDEL_ENVELOPE_CURVE) : undefined;
     try {
-      await initOsc({ remoteIp: '127.0.0.1', remotePort: 57120, envelopeCurve: envCurve });
-      const oscPort = getOscPort();
-      enableOscSampleLoading(oscPort);
-      engine.enableOsc({ remoteIp: '127.0.0.1', remotePort: 57120, envelopeCurve: envCurve });
-      
-      // Disable WebAudio when using OSC (same as index.ts does)
-      engine.setWebAudioEnabled(false);
-      
-      console.log('OSC mode enabled - sending to SuperDirt on port 57120');
+      const enabled = await engine.enableOsc({
+        remoteIp: '127.0.0.1',
+        remotePort: 57120,
+        envelopeCurve: envCurve,
+      });
+      if (!enabled) throw new Error('Failed to enable native OSC output');
+      enableOscSampleLoading(getOscPort());
+
+      console.log('Native OSC mode enabled - all audio processing is in SuperCollider');
     } catch (e) {
       console.error(`Failed to connect to SuperDirt: ${e.message}`);
       if (superDirtLauncher) superDirtLauncher.stop();

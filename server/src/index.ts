@@ -2,7 +2,7 @@
 /**
  * strudel-server - Backend server for nvim-strudel
  * Provides TCP connection for Neovim and runs Strudel pattern evaluation
- * Audio output via Web Audio (superdough) or OSC to SuperCollider/SuperDirt
+ * Independent audio backends: WebAudio/superdough or native SuperCollider/StrudelDirt
  * 
  * IMPORTANT: Audio polyfill must be initialized BEFORE importing superdough.
  * We use dynamic imports to ensure proper ordering.
@@ -200,13 +200,14 @@ async function main() {
   // Create server and engine FIRST so Neovim can connect immediately
   // SuperDirt startup happens in the background (it can take 60-90+ seconds to load samples)
   const server = new StrudelTcpServer(config);
-  const engine = new StrudelEngine();
+  const engine = new StrudelEngine({ output: useOsc ? 'osc' : 'webaudio' });
 
   // Track OSC initialization - playback waits for this if OSC mode is enabled
   // Using an object wrapper to avoid TypeScript narrowing issues with closures
-  const oscInit: { promise: Promise<void> | null; resolve: (() => void) | null } = {
+  const oscInit: { promise: Promise<void> | null; resolve: (() => void) | null; error: string | null } = {
     promise: null,
     resolve: null,
+    error: null,
   };
   
   if (useOsc) {
@@ -237,11 +238,11 @@ async function main() {
       superDirtLauncher.start().then((started) => {
         superDirtStarting = false;
         if (!started) {
-          console.warn('[strudel-server] SuperDirt failed to start');
-          console.warn('[strudel-server] Sample playback will use Web Audio instead');
+          oscInit.error = 'Native StrudelDirt backend failed to start';
+          console.error(`[strudel-server] ${oscInit.error}`);
           superDirtLauncher = null;
         } else {
-          console.log('[strudel-server] SuperDirt is ready for sample playback!');
+          console.log('[strudel-server] Native StrudelDirt backend is ready!');
         }
         // Signal that SuperDirt initialization is complete - playback can now proceed
         if (oscInit.resolve) {
@@ -249,20 +250,16 @@ async function main() {
         }
       }).catch((err) => {
         superDirtStarting = false;
-        console.error('[strudel-server] SuperDirt startup error:', err);
+        oscInit.error = `Native StrudelDirt startup error: ${err instanceof Error ? err.message : err}`;
+        console.error(`[strudel-server] ${oscInit.error}`);
         superDirtLauncher = null;
-        // Still resolve so playback doesn't hang forever (will use Web Audio fallback)
-        if (oscInit.resolve) {
-          oscInit.resolve();
-        }
+        if (oscInit.resolve) oscInit.resolve();
       });
     } else {
-      console.log('[strudel-server] sclang not found - SuperDirt auto-start disabled');
-      console.log('[strudel-server] Install SuperCollider to use SuperDirt: https://supercollider.github.io/');
-      // sclang not available, resolve immediately so playback doesn't hang
-      if (oscInit.resolve) {
-        oscInit.resolve();
-      }
+      oscInit.error = 'sclang not found; native OSC backend cannot start';
+      console.error(`[strudel-server] ${oscInit.error}`);
+      console.error('[strudel-server] Install SuperCollider: https://supercollider.github.io/');
+      if (oscInit.resolve) oscInit.resolve();
     }
   }
 
@@ -307,10 +304,11 @@ async function main() {
     process.exit(0);
   };
 
-  // Web Audio is always enabled for synth sounds (sine, sawtooth, square, triangle)
-  // These only work via superdough, not SuperDirt OSC
-  // When OSC is also enabled, sample sounds go to both (SuperDirt for better quality)
-  console.log('[strudel-server] Web Audio output enabled (superdough - required for synth sounds)');
+  console.log(
+    useOsc
+      ? '[strudel-server] Native OSC output selected (WebAudio processing disabled)'
+      : '[strudel-server] WebAudio output selected',
+  );
 
   // Enable OSC output to SuperDirt if requested
   // Note: SuperDirt may still be starting in the background, that's OK
@@ -338,7 +336,8 @@ async function main() {
         console.log('[strudel-server] Samples/soundfonts will be loaded on-demand when patterns use them');
       }
     } else {
-      console.log('[strudel-server] OSC output failed');
+      oscInit.error = 'Native OSC connection failed';
+      console.error(`[strudel-server] ${oscInit.error}`);
     }
     
     // If we're NOT auto-starting SuperDirt, resolve immediately
@@ -374,10 +373,12 @@ async function main() {
       case 'eval': {
         // Wait for OSC initialization to complete before evaluating
         // Eval often auto-starts playback, so we need audio output ready
-        if (oscInit.promise) {
-          await oscInit.promise;
+        if (oscInit.promise) await oscInit.promise;
+        if (oscInit.error) {
+          server.send(ws, { type: 'error', message: oscInit.error });
+          break;
         }
-        
+
         serverLog('debug', `Eval code (${msg.code?.length || 0} chars): ${msg.code?.substring(0, 200)}...`);
         const result = await engine.eval(msg.code);
         serverLog('debug', `Eval result: success=${result.success}, error=${result.error || 'none'}`);
@@ -401,10 +402,12 @@ async function main() {
       case 'play': {
         // Wait for OSC initialization to complete before starting playback
         // This ensures audio output is ready when the pattern starts
-        if (oscInit.promise) {
-          await oscInit.promise;
+        if (oscInit.promise) await oscInit.promise;
+        if (oscInit.error) {
+          server.send(ws, { type: 'error', message: oscInit.error });
+          break;
         }
-        
+
         const started = engine.play();
         if (!started) {
           server.send(ws, {

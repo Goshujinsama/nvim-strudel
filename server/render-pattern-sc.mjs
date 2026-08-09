@@ -330,7 +330,7 @@ if (verbose) {
   setOscDebug(true);
 }
 
-const engine = new StrudelEngine();
+const engine = new StrudelEngine({ output: 'osc' });
 await new Promise(r => setTimeout(r, 2000));
 
 // Initialize OSC
@@ -341,8 +341,8 @@ try {
   await initOsc({ remoteIp: '127.0.0.1', remotePort: 57120, envelopeCurve: envCurve });
   oscPort = getOscPort();
   enableOscSampleLoading(oscPort);
-  engine.enableOsc({ remoteIp: '127.0.0.1', remotePort: 57120, envelopeCurve: envCurve });
-  engine.setWebAudioEnabled(false);
+  const enabled = await engine.enableOsc({ remoteIp: '127.0.0.1', remotePort: 57120, envelopeCurve: envCurve });
+  if (!enabled) throw new Error('Failed to enable native OSC output');
 } catch (e) {
   console.error(`Failed to connect: ${e.message}`);
   scProcess.kill();

@@ -837,16 +837,13 @@ s.waitForBoot {
       shapeIdx = strudelTremShape.round.clip(0, 4);
       lfo = SelectX.ar(shapeIdx, [triLfo, sineLfo, rampLfo, sawLfo, squareLfo]);
       
-      // superdough applies a curve: Math.pow(lfo, 1.5)
-      // This softens the LFO shape, making peaks rounder
-      lfo = lfo.pow(1.5);
-      
-      // superdough behavior: baseGain + lfo * depth
-      // where baseGain = max(1 - depth, 0)
-      // This means at depth=1: modulates 0 to 1
-      // At depth=0.5: modulates 0.5 to 1
+      // Match the worklet ordering exactly: multiply by depth, apply the
+      // 1.5 curve, then clamp the modulator to [0, 1].
+      lfo = (lfo * strudelTremDepth).max(0).pow(1.5).clip(0, 1);
+
+      // superdough adds the LFO signal to max(1 - depth, 0).
       baseGain = (1 - strudelTremDepth).max(0);
-      modGain = baseGain + (lfo * strudelTremDepth);
+      modGain = baseGain + lfo;
       
       signal = signal * modGain;
       
@@ -1108,6 +1105,13 @@ s.waitForBoot {
         });
     }, '/strudel/loadSamples');
     
+    // Native panic: free and recreate every orbit's synth group so hush does
+    // not depend on a WebAudio context reset.
+    OSCdef(\\strudelHush, {
+        ~dirt.orbits.do { |orbit| orbit.freeSynths };
+    }, '/strudel/hush');
+    "*** Strudel native hush handler registered: /strudel/hush ***".postln;
+
     // OSC handler for Strudel synths - bypasses SuperDirt entirely
     // This avoids double envelope application from dirt_envelope
     // Message format: /strudel/synth synthName, param1, value1, param2, value2, ...

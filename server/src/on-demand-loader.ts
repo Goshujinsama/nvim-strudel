@@ -672,7 +672,7 @@ export async function loadSoundsForCode(code: string): Promise<string[]> {
         // Download samples to cache for SuperDirt
         const result = await loadSamples(source, baseUrl);
         if (result.bankNames.length > 0) {
-          loaded.push(...result.bankNames);
+          loaded.push(...result.changedBankNames);
           console.log(`[on-demand] Pre-loaded: ${result.bankNames.join(', ')}`);
         }
       } catch (err) {
@@ -759,14 +759,35 @@ export async function loadSoundsForCode(code: string): Promise<string[]> {
     console.log('[on-demand] All sounds already cached or not loadable');
   }
   
-  // Step 4 & 5: Notify SuperDirt to load samples
-  // Note: We use fire-and-forget (timeout=0) because the confirmation mechanism
-  // requires a reply port that may not be set up. SuperDirt will load the samples
-  // asynchronously, and they should be ready by the time the first cycle plays.
-  const soundfontsDetected = Array.from(soundNames).filter(name => isGmSoundfont(name));
-  if (soundfontsDetected.length > 0 || loaded.length > 0 || samplesCalls.length > 0) {
-    console.log('[on-demand] Notifying SuperDirt to load samples...');
-    notifySuperDirtLoadSamples(getCacheDir(), 0); // fire and forget
+  // Reload only banks that changed. Reloading every cached soundfont on each
+  // evaluation frees buffers that active native SuperCollider voices still use.
+  if (loaded.length > 0) {
+    const changedBanks = new Set<string>();
+    for (const name of loaded) {
+      const soundfont = parseSoundfontName(name);
+      if (soundfont) {
+        changedBanks.add(getSoundfontCacheName(soundfont.baseName, soundfont.variant));
+        continue;
+      }
+      if (isBankCached(name)) {
+        changedBanks.add(name);
+        continue;
+      }
+      const drum = await isDrumMachineSound(name);
+      if (drum?.isValid && isBankCached(drum.fullBankName)) {
+        changedBanks.add(drum.fullBankName);
+        continue;
+      }
+      throw new Error(`Could not resolve changed StrudelDirt cache bank "${name}"`);
+    }
+
+    for (const bank of changedBanks) {
+      console.log(`[on-demand] Waiting for StrudelDirt to load updated bank ${bank}...`);
+      const confirmed = await notifySuperDirtLoadSamples(join(getCacheDir(), bank), 30_000);
+      if (!confirmed) {
+        throw new Error(`StrudelDirt did not confirm updated bank "${bank}" before evaluation`);
+      }
+    }
   }
   
   return loaded;

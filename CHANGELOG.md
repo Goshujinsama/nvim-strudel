@@ -2,6 +2,18 @@
 
 All notable changes to nvim-strudel will be documented in this file.
 
+## Unreleased
+
+### Changed
+- Replaced obsolete `midi@2` native bindings with `@julusian/midi` for current Node.js ABI support
+- OSC mode is now a strict native backend: it uses a monotonic Node clock, creates no AudioContext/worklet graph, and has no per-event WebAudio fallback
+
+### Fixed
+- Native OSC tremolo now maps symbolic shapes to SynthDef indices, phase-locks to Strudel cycle time, and matches superdough depth/curve ordering
+- Native soundfont sources now remain alive through the complete ADSR release stage
+- Cached soundfonts are no longer reloaded on every evaluation, avoiding active SuperCollider buffer invalidation
+- Dynamic sample-bank loads now wait for StrudelDirt confirmation before native playback starts
+
 ## [1.1.0] - 2025-12-31
 
 ### Added

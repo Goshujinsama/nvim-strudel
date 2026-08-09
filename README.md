@@ -316,9 +316,9 @@ The default backend uses Node.js Web Audio API via `node-web-audio-api`. This wo
 
 ### OSC/StrudelDirt
 
-An alternative backend that sends OSC messages to StrudelDirt running in SuperCollider. This provides better performance and audio quality.
+An independent native backend that sends every audio event to StrudelDirt running in SuperCollider. OSC mode does not instantiate the WebAudio processing graph and never falls back to superdough per event; feature support comes exclusively from native StrudelDirt/SuperCollider modules.
 
-**Pros**: Lower CPU usage, better audio quality, access to StrudelDirt effects
+**Pros**: Native SuperCollider processing, lower CPU usage, better audio quality, access to StrudelDirt effects
 **Cons**: Requires SuperCollider installation (see [Installing SuperCollider](#optional-supercollidersuperdirt-for-osc-backend))
 
 **Audio Server Detection**: The OSC backend automatically detects your audio server:
