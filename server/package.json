@@ -32,7 +32,7 @@
     "@strudel/tonal": "^1.1.0",
     "@strudel/transpiler": "^1.2.5",
     "@strudel/webaudio": "^1.1.0",
-    "midi": "^2.0.0",
+    "midi": "npm:@julusian/midi@^3.8.0",
     "node-web-audio-api": "^1.0.7",
     "play-sound": "^1.1.6",
     "vscode-languageserver": "^9.0.1",
@@ -47,5 +47,8 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "allowScripts": {
+    "@julusian/midi@3.8.0": true
   }
 }

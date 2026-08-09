@@ -7,8 +7,7 @@
  * This polyfill must be initialized BEFORE importing @strudel/midi or the webmidi package.
  */
 
-// @ts-ignore - midi has no type definitions
-import midi from 'midi';
+import { Input, Output } from 'midi';
 
 // Track all MIDIAccess instances for cleanup
 const allMidiAccess: Set<NodeMIDIAccess> = new Set();
@@ -28,7 +27,7 @@ class NodeMIDIOutput {
   readonly connection: 'open' | 'closed' | 'pending' = 'closed';
 
   constructor(portIndex: number, name: string) {
-    this.output = new midi.Output();
+    this.output = new Output();
     this.portIndex = portIndex;
     this.id = `output-${portIndex}`;
     this.name = name;
@@ -91,7 +90,7 @@ class NodeMIDIInput {
   readonly connection: 'open' | 'closed' | 'pending' = 'closed';
 
   constructor(portIndex: number, name: string) {
-    this.input = new midi.Input();
+    this.input = new Input();
     this.portIndex = portIndex;
     this.id = `input-${portIndex}`;
     this.name = name;
@@ -168,7 +167,7 @@ class NodeMIDIAccess {
     this.outputs = new Map();
 
     // Scan for MIDI outputs
-    const outputScanner = new midi.Output();
+    const outputScanner = new Output();
     const outputCount = outputScanner.getPortCount();
     for (let i = 0; i < outputCount; i++) {
       const name = outputScanner.getPortName(i);
@@ -178,7 +177,7 @@ class NodeMIDIAccess {
     outputScanner.closePort();
 
     // Scan for MIDI inputs
-    const inputScanner = new midi.Input();
+    const inputScanner = new Input();
     const inputCount = inputScanner.getPortCount();
     for (let i = 0; i < inputCount; i++) {
       const name = inputScanner.getPortName(i);
