@@ -10,6 +10,7 @@ All notable changes to nvim-strudel will be documented in this file.
 - Native amplitude ADSR now defaults to a linear curve, matching superdough/WebAudio soundfont envelopes; custom SuperCollider curves remain configurable
 
 ### Fixed
+- `.strudel` buffers now define JavaScript-style `commentstring`/`comments`, enabling Neovim's `gc` commenting operators
 - Native OSC tremolo now maps symbolic shapes to SynthDef indices, phase-locks to Strudel cycle time, and matches superdough depth/curve ordering
 - Native soundfont sources and their per-event StrudelDirt groups now remain alive through the complete ADSR release, allowing dense polyphonic events to overlap without voice stealing
 - Cached soundfonts are no longer reloaded on every evaluation, avoiding active SuperCollider buffer invalidation
