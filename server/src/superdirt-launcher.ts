@@ -1092,16 +1092,24 @@ s.waitForBoot {
     // After loading, sends confirmation back to the server
     OSCdef(\\strudelLoadSamples, { |msg|
         var path, replyPort;
-        path = msg[1].asString;
-        // Use SC's if() syntax - the ? operator doesn't work like JS ternary
+        path = msg[1].asString.standardizePath;
         replyPort = if(msg[2].notNil, { msg[2].asInteger }, { 0 });
-        "Strudel: Loading samples from %".format(path).postln;
-        ~dirt.loadSoundFiles(path);
-        "Strudel: Samples loaded".postln;
-        // Send confirmation back to the server if reply port was provided
-        if(replyPort > 0, {
-            NetAddr("127.0.0.1", replyPort).sendMsg('/strudel/samplesLoaded', path);
-            "Strudel: Sent load confirmation to port %".format(replyPort).postln;
+
+        if(PathName(path).isFolder, {
+            // OSC callbacks cannot block on s.sync directly. Load one exact
+            // bank in a Routine, wait for its buffers, and only then confirm.
+            fork {
+                "Strudel: Loading sample bank from %".format(path).postln;
+                ~dirt.loadSoundFileFolder(path, PathName(path).fileName);
+                s.sync;
+                "Strudel: Sample bank loaded: %".format(PathName(path).fileName).postln;
+                if(replyPort > 0, {
+                    NetAddr("127.0.0.1", replyPort).sendMsg('/strudel/samplesLoaded', path);
+                    "Strudel: Sent load confirmation to port %".format(replyPort).postln;
+                });
+            };
+        }, {
+            "Strudel: Refusing missing sample-bank directory: %".format(path).warn;
         });
     }, '/strudel/loadSamples');
     

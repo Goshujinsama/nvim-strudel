@@ -22,7 +22,7 @@
 ---@field osc_host? string SuperDirt OSC host (default: 127.0.0.1)
 ---@field osc_port? number SuperDirt OSC port (default: 57120)
 ---@field auto_superdirt? boolean Auto-start SuperDirt if sclang available
----@field envelope_curve? number Envelope curve: -2 = exponential (default), 0 = linear (for testing)
+---@field envelope_curve? number Amplitude-envelope curve: 0 = linear/parity default, negative values add SC coloration
 
 ---@class StrudelPianorollConfig
 ---@field height number Height of the pianoroll window
@@ -82,7 +82,7 @@ M.defaults = {
     osc_host = '127.0.0.1',   -- SuperDirt OSC host
     osc_port = 57120,         -- SuperDirt OSC port
     auto_superdirt = true,    -- Auto-start SuperDirt if sclang available
-    envelope_curve = -2,      -- Envelope curve: -2 = exponential (default), 0 = linear (for testing)
+    envelope_curve = 0,       -- Linear amplitude ADSR, matching superdough/WebAudio
   },
   pianoroll = {
     height = 10,              -- Height of pianoroll window

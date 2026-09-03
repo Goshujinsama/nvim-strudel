@@ -357,7 +357,10 @@ async function notifySuperDirtLoadSamplesNow(path: string, timeout: number): Pro
     return false;
   }
 
-  const fullPath = path + '/*';
+  // Send the bank directory itself. StrudelDirt's loadSoundFileFolder()
+  // expands its contents; sending `${path}/*` makes loadSoundFiles() see WAV
+  // files where it expects directories and acknowledge an empty load.
+  const bankPath = path;
 
   try {
     if (timeout > 0) await setupReplyPort();
@@ -369,13 +372,13 @@ async function notifySuperDirtLoadSamplesNow(path: string, timeout: number): Pro
     const confirmation = timeout > 0
       ? new Promise<boolean>((resolve) => {
           const timeoutHandle = setTimeout(() => {
-            if (pendingLoadCallbacks.has(fullPath)) {
+            if (pendingLoadCallbacks.has(bankPath)) {
               console.warn('[sample-manager] Timeout waiting for StrudelDirt sample confirmation');
-              pendingLoadCallbacks.delete(fullPath);
+              pendingLoadCallbacks.delete(bankPath);
               resolve(false);
             }
           }, timeout);
-          pendingLoadCallbacks.set(fullPath, () => {
+          pendingLoadCallbacks.set(bankPath, () => {
             clearTimeout(timeoutHandle);
             resolve(true);
           });
@@ -385,7 +388,7 @@ async function notifySuperDirtLoadSamplesNow(path: string, timeout: number): Pro
     oscPort.send({
       address: '/strudel/loadSamples',
       args: [
-        { type: 's', value: fullPath },
+        { type: 's', value: bankPath },
         { type: 'i', value: replyPortNum },
       ],
     });
@@ -393,7 +396,7 @@ async function notifySuperDirtLoadSamplesNow(path: string, timeout: number): Pro
 
     return confirmation ? await confirmation : true;
   } catch (err) {
-    pendingLoadCallbacks.delete(fullPath);
+    pendingLoadCallbacks.delete(bankPath);
     console.error('[sample-manager] Failed to notify StrudelDirt:', err);
     return false;
   }

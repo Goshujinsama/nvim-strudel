@@ -44,7 +44,7 @@ local function get_server_cmd()
           table.insert(cmd, '--auto-superdirt')
         end
       end
-      -- Envelope curve: -2 = exponential (default), 0 = linear (for testing)
+      -- Amplitude-envelope curve: 0 = linear WebAudio parity
       if config.audio.envelope_curve then
         table.insert(cmd, '--envelope-curve')
         table.insert(cmd, tostring(config.audio.envelope_curve))

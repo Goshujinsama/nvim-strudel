@@ -17,7 +17,7 @@
  *   --superdirt-verbose   Show SuperCollider output
  *   --log <path>          Write logs to file
  *   --log-level <level>   Minimum log level: debug, info, warn, error (default: debug)
- *   --envelope-curve <n>  Envelope curve: -2 = exponential (default), 0 = linear (for testing)
+ *   --envelope-curve <n>  Amplitude-envelope curve (default: 0, linear WebAudio parity)
  */
 
 import * as fs from 'fs';

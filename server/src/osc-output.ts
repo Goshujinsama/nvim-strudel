@@ -12,10 +12,10 @@ const OSC_REMOTE_PORT = 57120;
 let udpPort: any = null;
 let isOpen = false;
 
-// Envelope curve for amplitude ADSR: 0 = linear (better for testing), -2 = exponential (default, better quality)
-// Linear (0) matches superdough's WebAudio ramps exactly for comparison testing
-// Exponential (-2) sounds more natural and is StrudelDirt's default
-let envelopeCurve = -2;
+// superdough applies linear ramps to amplitude ADSR. Keep the native default
+// linear as well; callers may still override it explicitly for a different SC
+// timbre, but that is no longer presented as parity behavior.
+let envelopeCurve = 0;
 
 // Clock synchronization
 // AudioContext time starts at 0 when created, we need to map it to Unix/NTP time
@@ -45,7 +45,7 @@ function audioTimeToUnixTime(audioTime: number): number {
 export interface OscConfig {
   remoteIp?: string;
   remotePort?: number;
-  /** Envelope curve: 0 = linear (for testing), -2 = exponential (default) */
+  /** Amplitude-envelope curve: 0 = linear/parity default; negative values are optional SC coloration */
   envelopeCurve?: number;
 }
 
@@ -679,8 +679,7 @@ export function hapToOscArgs(hap: any, cps: number): any[] {
       controls.decay = envDecay;
       controls.hold = envSustainLevel;  // This is sustainLevel (0-1), NOT holdTime!
       controls.release = envRelease;
-      // Envelope curve: 0 = linear (testing), -2 = exponential (default)
-      // 0 = linear (for testing), -2 = exponential (default, better quality)
+      // superdough's amplitude AudioParam ramps are linear.
       controls.curve = envelopeCurve;
       // sustain becomes holdtime in the synth (gate duration before release)
       // DirtEvent.sc calculates: totalDuration = sustain + release
@@ -744,7 +743,7 @@ export function hapToOscArgs(hap: any, cps: number): any[] {
     // previous voice. Override the rate-unit duration so Dirt's gate survives
     // through this voice's complete sustain and release.
     controls.unitDuration = controls.sfSustain * Math.max(Math.abs(controls.speed), 0.000001);
-    // Envelope curve: 0 = linear (testing), -2 = exponential (default)
+    // superdough's soundfont amplitude AudioParam ramps are linear.
     controls.curve = envelopeCurve;
     controls.sustain = delta;
     
@@ -778,7 +777,7 @@ export function hapToOscArgs(hap: any, cps: number): any[] {
       controls.decay = envDecay;
       controls.hold = envSustainLevel;
       controls.release = envRelease;
-      // Envelope curve: 0 = linear (testing), -2 = exponential (default)
+      // superdough's sample amplitude AudioParam ramps are linear.
       controls.curve = envelopeCurve;
       controls.sustain = delta;
     }

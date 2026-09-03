@@ -68,6 +68,7 @@ describe('native OSC control translation', () => {
     // delta = duration / cps = 2 seconds, followed by a 2.5-second release.
     expect(controls.sustain).toBe(2);
     expect(controls.release).toBe(2.5);
+    expect(controls.curve).toBe(0);
     expect(controls.sfSustain).toBeCloseTo(4.51);
     // Dirt divides rate-unit duration by speed. Compensating here prevents its
     // event gate from reverting to the short natural sample duration.

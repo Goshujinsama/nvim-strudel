@@ -113,6 +113,18 @@ describe('SuperDirtLauncher', () => {
       
       expect(killAllIndex).toBeLessThan(bootIndex);
     });
+
+    it('loads and confirms one exact dynamic sample bank', () => {
+      const script = getStartupScript();
+      const loadIndex = script.indexOf('~dirt.loadSoundFileFolder(path, PathName(path).fileName)');
+      const syncIndex = script.indexOf('s.sync;', loadIndex);
+      const confirmIndex = script.indexOf("sendMsg('/strudel/samplesLoaded', path)", loadIndex);
+
+      expect(loadIndex).toBeGreaterThan(0);
+      expect(script).not.toContain('~dirt.loadSoundFiles(path)');
+      expect(syncIndex).toBeGreaterThan(loadIndex);
+      expect(confirmIndex).toBeGreaterThan(syncIndex);
+    });
   });
 
   describe('static methods', () => {
